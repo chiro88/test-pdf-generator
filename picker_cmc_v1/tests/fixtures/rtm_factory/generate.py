@@ -42,8 +42,11 @@ def main() -> None:
         )
     write_manifest(GALLERY_DIR, entries, coverage_summary(cases))
     write_index(GALLERY_DIR, cases)
-    run_self_check(GALLERY_DIR)
+    report = run_self_check(GALLERY_DIR)
+    ov = report["text_overlap"]
     print(f"generated {len(cases)} RTM candidate cases at {GALLERY_DIR}")
+    print(f"text-overlap self-check: {ov['passed']}/{ov['checked']} regions matched, "
+          f"{len(ov['skipped'])} skipped (see rtm_gallery/SELF_CHECK_REPORT.json)")
 
 
 if __name__ == "__main__":

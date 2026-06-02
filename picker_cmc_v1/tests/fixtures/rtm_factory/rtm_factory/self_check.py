@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -97,7 +98,128 @@ def _check_case(case_dir: Path) -> list[str]:
     return errors
 
 
-def run_self_check(gallery_dir: Path) -> None:
+# --- D3.5: truth-region vs PDF text-extraction overlap -----------------------
+# Lenient on purpose: extracted text bboxes jitter by font/rendering, so a
+# region passes if any extracted span overlaps it (IoU>0, or a center inside
+# the other, within a small tolerance). Rotated/morph watermarks extract
+# unreliably and are skipped WITH a recorded reason (never silently).
+TEXT_TOL = 3.0
+
+
+def _spans(page) -> list[tuple[str, list]]:
+    spans: list[tuple[str, list]] = []
+    for block in page.get_text("dict").get("blocks", []):
+        for line in block.get("lines", []):
+            for sp in line.get("spans", []):
+                txt = (sp.get("text") or "").strip()
+                if txt:
+                    spans.append((txt, list(sp["bbox"])))
+    return spans
+
+
+def _iou(a: list, b: list) -> float:
+    ix0, iy0 = max(a[0], b[0]), max(a[1], b[1])
+    ix1, iy1 = min(a[2], b[2]), min(a[3], b[3])
+    inter = max(0.0, ix1 - ix0) * max(0.0, iy1 - iy0)
+    if inter <= 0:
+        return 0.0
+    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _center_in(box_inner: list, box_outer: list) -> bool:
+    cx = (box_inner[0] + box_inner[2]) / 2
+    cy = (box_inner[1] + box_inner[3]) / 2
+    return box_outer[0] <= cx <= box_outer[2] and box_outer[1] <= cy <= box_outer[3]
+
+
+def _y_overlap(a: list, b: list) -> bool:
+    return min(a[3], b[3]) - max(a[1], b[1]) > 0
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def _overlapping_spans(expected: list, spans: list[tuple[str, list]], need_y: bool = True):
+    exp = [expected[0] - TEXT_TOL, expected[1] - TEXT_TOL, expected[2] + TEXT_TOL, expected[3] + TEXT_TOL]
+    out = []
+    for txt, sb in spans:
+        if _iou(exp, sb) > 0 or _center_in(sb, exp) or _center_in(exp, sb):
+            if (not need_y) or _y_overlap(exp, sb):
+                out.append((txt, sb))
+    return out
+
+
+def _match_region(expected_bbox: list, expected_key: str, spans, need_y: bool = True):
+    """Return (status, extracted_bbox_or_text). status in {ok, none, mismatch}.
+
+    A region passes only if extracted text overlaps it AND the aggregated
+    overlapping text contains the expected key (figure/table index, or the
+    header/footer/watermark text). This rejects "overlaps unrelated filler
+    prose" false positives while staying lenient on exact geometry/wrapping.
+    """
+    ov = _overlapping_spans(expected_bbox, spans, need_y=need_y)
+    if not ov:
+        return "none", None
+    agg = _norm("".join(t for t, _ in ov))
+    key = _norm(expected_key)
+    if key and key in agg:
+        return "ok", ov[0][1]
+    return "mismatch", ("".join(t for t, _ in ov)).strip()[:60]
+
+
+def check_text_overlap(gallery_dir: Path, case_ids: list[str]) -> tuple[list[str], dict]:
+    """Verify each text-bearing truth region overlaps the right extracted text."""
+    errors: list[str] = []
+    report: dict = {"checked": 0, "passed": 0, "skipped": [], "failures": []}
+
+    def record(status, cid, pg, kind, idx, region, expected_key, bbox, extracted):
+        report["checked"] += 1
+        if status == "ok":
+            report["passed"] += 1
+            return
+        note = "no extracted text overlaps region" if status == "none" else f"overlapping text {extracted!r} lacks expected key"
+        msg = (f"{cid} p{pg} {kind}{(' ' + idx) if idx else ''} {region}: {note}; "
+               f"expected_key={expected_key!r} expected_bbox={bbox}")
+        errors.append(msg)
+        report["failures"].append(msg)
+
+    for cid in case_ids:
+        truth = json.loads((gallery_dir / cid / f"{cid}.truth.json").read_text(encoding="utf-8"))
+        try:
+            doc = fitz.open(str(gallery_dir / cid / f"{cid}.pdf"))
+        except Exception as exc:  # pragma: no cover
+            errors.append(f"{cid}: PDF open failed during text-overlap check: {exc}")
+            continue
+        for page in truth.get("pages", []):
+            pg = page["page"]
+            spans = _spans(doc[pg - 1])
+            for reg in page.get("common_regions", []):
+                kind = reg.get("kind")
+                bbox = reg["bbox"]
+                key = reg.get("text", "")
+                if kind == "watermark":
+                    rot = reg.get("rotation_deg") or 0
+                    if abs(rot) > 0.01:
+                        report["skipped"].append(
+                            f"{cid} p{pg} watermark rot={rot}: rotated/morph text extracts unreliably — skipped")
+                        continue
+                status, extracted = _match_region(bbox, key, spans, need_y=True)
+                record(status, cid, pg, kind, "", "text", key, bbox, extracted)
+            for fig in page.get("figures", []):
+                idx = fig.get("index", "")
+                status, extracted = _match_region(fig["caption_region"], idx, spans, need_y=True)
+                record(status, cid, pg, "figure", idx, "caption_region", idx, fig["caption_region"], extracted)
+            for tbl in page.get("tables", []):
+                idx = tbl.get("index", "")
+                status, extracted = _match_region(tbl["caption_region"], idx, spans, need_y=True)
+                record(status, cid, pg, "table", idx, "caption_region", idx, tbl["caption_region"], extracted)
+        doc.close()
+    return errors, report
+
+
+def run_self_check(gallery_dir: Path) -> dict:
     manifest_path = gallery_dir / "MANIFEST.json"
     index_path = gallery_dir / "index.md"
     if not manifest_path.exists():
@@ -187,5 +309,15 @@ def run_self_check(gallery_dir: Path) -> None:
     if not coverage or "counts" not in coverage:
         errors.append("MANIFEST.json missing machine-readable coverage_summary (T2.8)")
 
+    # --- D3.5: truth-region vs PDF text-extraction overlap (handoff T2.1) -----
+    overlap_errors, overlap_report = check_text_overlap(gallery_dir, case_ids)
+    errors.extend(overlap_errors)
+    # Persist a durable self-check report so skip reasons are never silent.
+    (gallery_dir / "SELF_CHECK_REPORT.json").write_text(
+        json.dumps({"text_overlap": overlap_report}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
     if errors:
         raise AssertionError("RTM factory self-check failed:\n" + "\n".join(errors))
+    return {"text_overlap": overlap_report}

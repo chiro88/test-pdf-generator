@@ -410,7 +410,7 @@ def expanded_cases() -> List[CaseSpec]:
         case_id="exp_figure_above_diagram_dotted",
         axes={"figure": "caption_above_diagram", "index": "3.4", "title": "multiline"},
         page=PageSpec(page_count=1),
-        figures=(_figure("3.4", "Reset and clock distribution\nacross multiple power domains", body_kind="diagram", alias="Figure", pos="above", top=120, body_h=300),),
+        figures=(_figure("3.4", "Reset and clock distribution\nacross multiple power domains", body_kind="diagram", alias="Figure", pos="above", top=120, body_h=300, cap_h=46),),
         notes="Figure with a multiline caption above a block diagram body.",
     ))
     cases.append(CaseSpec(
@@ -425,8 +425,8 @@ def expanded_cases() -> List[CaseSpec]:
         axes={"figure": "multiple_per_page", "title": "multiline", "body": "raster_and_diagram"},
         page=PageSpec(page_count=1),
         figures=(
-            _figure("A.1", "Die photo raster map\nwith annotated blocks", body_kind="raster", alias="Fig.", pos="below", top=110, body_h=170),
-            _figure("3.4", "Floorplan block diagram\nof the analog front end", body_kind="diagram", alias="Figure", pos="below", top=400, body_h=170),
+            _figure("A.1", "Die photo raster map\nwith annotated blocks", body_kind="raster", alias="Fig.", pos="below", top=110, body_h=160, cap_h=46),
+            _figure("3.4", "Floorplan block diagram\nof the analog front end", body_kind="diagram", alias="Figure", pos="below", top=400, body_h=160, cap_h=46),
         ),
         notes="Two figures on one page, both with multiline titles and different body kinds.",
     ))

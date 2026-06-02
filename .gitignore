@@ -1,13 +1,16 @@
 # Regenerable RTM factory output (rebuild with: python rtm_factory/generate.py)
 picker_cmc_v1/tests/fixtures/rtm_gallery/
 
-# Frozen fixtures are promoted from human-reviewed index.md (Gate B). The demo
-# set produced via --keep override is not human-approved; ignore until real review.
-picker_cmc_v1/tests/fixtures/rtm_frozen/
+# rtm_frozen/ stays commit-eligible: it becomes the durable, human-reviewed
+# (Gate B) golden fixture set for the detector. Only --keep demo / scratch
+# output is ignored, under a separate dir, so real frozen fixtures can be
+# committed without `git add -f`.
+picker_cmc_v1/tests/fixtures/rtm_frozen_demo/
 
 # Generated handoff bundles
 docs/cc_handoff/D2_handoff.tar.gz
 docs/cc_handoff/D3_handoff.tar.gz
+docs/cc_handoff/D3_5_handoff.tar.gz
 
 # Python caches
 __pycache__/

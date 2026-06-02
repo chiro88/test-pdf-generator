@@ -7,10 +7,14 @@ picker_cmc_v1/tests/fixtures/rtm_gallery/
 # committed without `git add -f`.
 picker_cmc_v1/tests/fixtures/rtm_frozen_demo/
 
+# Detector-vs-truth comparison artifacts (regenerable)
+artifacts/
+
 # Generated handoff bundles
 docs/cc_handoff/D2_handoff.tar.gz
 docs/cc_handoff/D3_handoff.tar.gz
 docs/cc_handoff/D3_5_handoff.tar.gz
+docs/cc_handoff/D4_handoff.tar.gz
 
 # Python caches
 __pycache__/

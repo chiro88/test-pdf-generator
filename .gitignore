@@ -1,8 +1,13 @@
 # Regenerable RTM factory output (rebuild with: python rtm_factory/generate.py)
 picker_cmc_v1/tests/fixtures/rtm_gallery/
 
-# Generated handoff bundle
+# Frozen fixtures are promoted from human-reviewed index.md (Gate B). The demo
+# set produced via --keep override is not human-approved; ignore until real review.
+picker_cmc_v1/tests/fixtures/rtm_frozen/
+
+# Generated handoff bundles
 docs/cc_handoff/D2_handoff.tar.gz
+docs/cc_handoff/D3_handoff.tar.gz
 
 # Python caches
 __pycache__/

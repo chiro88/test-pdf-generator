@@ -49,9 +49,15 @@ def build_pdf(case: CaseSpec, case_dir: Path) -> Tuple[dict, List[Path]]:
         _add_body_filler(page, width, height, page_no, case.page.columns)
 
         for kind, spec in (("header", case.header), ("footer", case.footer)):
-            region = draw_header_or_footer(page, spec, kind=kind, page_no=page_no, page_offset=case.page.page_offset, page_width=width)
+            region = draw_header_or_footer(page, spec, kind=kind, page_no=page_no, page_offset=case.page.page_offset, page_width=width, page_count=case.page.page_count)
             if region is not None:
                 assert_bbox_in_page(region.bbox, width, height, f"{case.case_id}:{kind}")
+                page_truth.common_regions.append(region)
+
+        for extra in case.extra_regions:
+            region = draw_header_or_footer(page, extra, kind=extra.kind, page_no=page_no, page_offset=case.page.page_offset, page_width=width, page_count=case.page.page_count)
+            if region is not None:
+                assert_bbox_in_page(region.bbox, width, height, f"{case.case_id}:{extra.kind}")
                 page_truth.common_regions.append(region)
 
         wm = draw_watermark(page, case.watermark, page_no=page_no, page_offset=case.page.page_offset)

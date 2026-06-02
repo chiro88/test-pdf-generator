@@ -73,6 +73,7 @@ def test_list_templates_json(capsys):
     assert "waveform" in t["figure_body"] and t["watermark"] and t["table_caption"]
 
 
+@pytest.mark.slow
 def test_generate_json(capsys, tmp_path):
     out = tmp_path / "rtm_gallery"
     code, js = run_json(capsys, ["generate", "--out", str(out), "--json"])
@@ -143,6 +144,7 @@ def test_validate_scenario_out_of_bounds(capsys, tmp_path):
     assert code == 2 and js["error_code"] == "SCENARIO_OUT_OF_PAGE_BOUNDS"
 
 
+@pytest.mark.slow
 def test_self_check_json(capsys, tmp_path):
     out = tmp_path / "rtm_gallery"
     run_json(capsys, ["generate", "--out", str(out), "--json"])

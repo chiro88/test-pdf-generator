@@ -5,6 +5,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+# These build/inspect the full gallery via generate.py — slow gate.
+pytestmark = pytest.mark.slow
+
 ROOT = Path(__file__).resolve().parents[1]
 FACTORY_DIR = ROOT / "picker_cmc_v1" / "tests" / "fixtures" / "rtm_factory"
 GALLERY_DIR = ROOT / "picker_cmc_v1" / "tests" / "fixtures" / "rtm_gallery"

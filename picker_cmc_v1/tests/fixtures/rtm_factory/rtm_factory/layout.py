@@ -31,3 +31,19 @@ def mirrored_x_bbox(bbox: BBox, page_width: float) -> BBox:
 def assert_bbox_in_page(bbox: BBox, width: float, height: float, label: str) -> None:
     if not (0 <= bbox.x0 < bbox.x1 <= width and 0 <= bbox.y0 < bbox.y1 <= height):
         raise ValueError(f"{label} bbox out of page bounds: {bbox} for {width}x{height}")
+
+
+def page_jitter(page_no: int, amp_x: int, amp_y: int) -> tuple[float, float]:
+    """Deterministic small per-page offset (no RNG), each axis in [-amp, +amp].
+
+    Multipliers (3, 2) are kept coprime to the moduli (2*amp+1) so the offset
+    actually varies page to page rather than collapsing to a constant.
+    """
+    dx = ((page_no * 3) % (2 * amp_x + 1)) - amp_x if amp_x else 0
+    dy = ((page_no * 2) % (2 * amp_y + 1)) - amp_y if amp_y else 0
+    return float(dx), float(dy)
+
+
+def jittered_bbox(bbox: BBox, page_no: int, amp_x: int, amp_y: int) -> BBox:
+    dx, dy = page_jitter(page_no, amp_x, amp_y)
+    return BBox(bbox.x0 + dx, bbox.y0 + dy, bbox.x1 + dx, bbox.y1 + dy)

@@ -21,7 +21,9 @@ sys.path.insert(0, str(FACTORY_DIR))
 from rtm_factory.cli import generate_gallery, main  # noqa: E402
 from rtm_factory.promote import promote  # noqa: E402
 
-pytestmark = pytest.mark.rtm_integration
+# Every test here uses the full-gallery fixture, so the whole module is slow:
+# `-m "not slow"` must not trigger a full 42/50-case gallery build.
+pytestmark = [pytest.mark.rtm_integration, pytest.mark.slow]
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 PERTURB_CASE = "core_figure_caption_bottom"

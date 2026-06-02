@@ -506,6 +506,71 @@ def expanded_cases() -> List[CaseSpec]:
         coverage_hints=("tbl.fragment:same_page_fragment",),
     ))
 
+    # --- D7: common-region realism (structural diversity + deterministic jitter) ---
+    cases.append(CaseSpec(
+        case_id="exp_hf_header_rule_topright_subtitle",
+        axes={"header": "rule_topright_subtitle", "pages": 2},
+        page=PageSpec(page_count=2),
+        header=HeaderFooterSpec(True, band(360, 18, 564, 54), HEADER_TEMPLATES["subtitle_only"], True, False, True),
+        notes="Header with a rule and a top-right subsection subtitle (no page number).",
+        coverage_hints=("hf.subtitle_position:top_right",),
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_hf_footer_rule_bottomright_page",
+        axes={"footer": "rule_bottomright_page_x_of_y", "pages": 3},
+        page=PageSpec(page_count=3),
+        footer=HeaderFooterSpec(True, band(360, 740, 564, 774), FOOTER_TEMPLATES["page_x_of_y"], True, False, True),
+        notes="Footer with a rule and a bottom-right 'Page x of y' counter.",
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_hf_multipart_footer_center_notice",
+        axes={"footer": "multipart_left_center_right", "pages": 2},
+        page=PageSpec(page_count=2),
+        footer=HeaderFooterSpec(True, band(48, 740, 220, 774), HEADER_TEMPLATES["doc_title"], False, False, False),
+        extra_regions=(
+            HeaderFooterSpec(True, band(225, 740, 470, 774), FOOTER_TEMPLATES["distribution_notice"], False, False, False, kind="footer"),
+            HeaderFooterSpec(True, band(500, 740, 564, 774), FOOTER_TEMPLATES["page_only"], True, False, False, kind="footer"),
+        ),
+        notes="Multi-part footer: left document title, center distribution notice, right page number.",
+        coverage_hints=("hf.page_number_position:bottom_right",),
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_hf_first_page_suppressed",
+        axes={"header": "first_page_suppressed", "pages": 3},
+        page=PageSpec(page_count=3),
+        header=HeaderFooterSpec(True, band(48, 18, 564, 54), HEADER_TEMPLATES["subtitle_page"], True, False, False, first_page_suppressed=True),
+        notes="Running header suppressed on the first page, present on pages 2+.",
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_hf_evenodd_mirror_with_jitter",
+        axes={"header": "evenodd_mirror_jitter", "pages": 4},
+        page=PageSpec(page_count=4),
+        header=HeaderFooterSpec(True, band(48, 18, 564, 54), HEADER_TEMPLATES["subtitle_page"], True, mirrored_even_odd=True, rule_line=True, jitter_x=3, jitter_y=2),
+        notes="Even/odd mirrored header with small deterministic per-page x/y jitter.",
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_hf_rule_y_jitter",
+        axes={"header_footer": "both_rules_rule_jitter", "pages": 3},
+        page=PageSpec(page_count=3),
+        header=HeaderFooterSpec(True, band(48, 18, 564, 54), HEADER_TEMPLATES["plain"], False, rule_line=True, rule_jitter_y=2),
+        footer=HeaderFooterSpec(True, band(48, 740, 564, 774), FOOTER_TEMPLATES["plain"], False, rule_line=True, rule_jitter_y=2),
+        notes="Header and footer rules whose y position jitters slightly per page.",
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_wm_license_text_position_jitter",
+        axes={"watermark": "variable_license_position_jitter", "pages": 3},
+        page=PageSpec(page_count=3),
+        watermark=WatermarkSpec(True, band(120, 310, 500, 510), WATERMARK_TEMPLATES["licensed"], True, 0, 0.13, "center", jitter_pos=4),
+        notes="Variable per-page license watermark with deterministic position jitter.",
+    ))
+    cases.append(CaseSpec(
+        case_id="exp_wm_near_footer_rotation_opacity_jitter",
+        axes={"watermark": "near_footer_rot_opacity_jitter", "pages": 3},
+        page=PageSpec(page_count=3),
+        watermark=WatermarkSpec(True, band(120, 690, 500, 740), WATERMARK_TEMPLATES["confidential"], False, 8, 0.18, "center", jitter_rot=4, jitter_opacity=0.05, near_footer=True),
+        notes="Watermark sitting just above the footer band, with per-page rotation/opacity jitter.",
+    ))
+
     return cases
 
 

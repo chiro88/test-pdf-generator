@@ -32,6 +32,13 @@ AXIS_REQUIREMENTS: Dict[str, List[str]] = {
     "hf.mirrored": ["mirrored"],
     "hf.rule_line": ["rule_line"],
     "hf.partial": ["partial_support"],
+    # D7 common-region realism axes
+    "hf.rule": ["none", "header_rule", "footer_rule", "both_rules"],
+    "hf.page_number_position": ["none", "bottom_center", "bottom_right", "page_x_of_y"],
+    "hf.subtitle_position": ["none", "centered", "top_right"],
+    "hf.support": ["all_pages", "first_page_suppressed", "partial_support"],
+    "hf.jitter": ["none", "xy_jitter", "rule_y_jitter", "evenodd_jitter"],
+    "wm.jitter": ["none", "position_jitter", "rotation_opacity_jitter", "variable_text_jitter", "near_footer"],
     "wm.presence": ["none", "fixed", "variable"],
     "wm.location": ["center", "corner"],
     "wm.opacity": ["light", "strong"],
@@ -76,6 +83,21 @@ COVERAGE_EXCEPTIONS: Dict[str, str] = {
     "neg.kind:figure_ref_only": "Named negative scenario; presence-only by exact name.",
     "neg.kind:table_ref_only": "Named negative scenario; presence-only by exact name.",
     "neg.kind:weak_partial_header": "Named negative scenario; presence-only by exact name.",
+    # D7 stress axes — single representative each is sufficient.
+    "hf.rule:header_rule": "D7 header-rule realism variant; one representative.",
+    "hf.rule:footer_rule": "D7 footer-rule realism variant; one representative.",
+    "hf.rule:both_rules": "D7 both-rules realism variant; one representative.",
+    "hf.page_number_position:bottom_right": "D7 page-number-position stress; one representative.",
+    "hf.page_number_position:page_x_of_y": "D7 'Page x of y' stress; one representative.",
+    "hf.subtitle_position:top_right": "D7 subtitle-position stress; one representative.",
+    "hf.support:first_page_suppressed": "D7 first-page-suppression stress; one representative.",
+    "hf.jitter:xy_jitter": "D7 per-page xy jitter stress; one representative.",
+    "hf.jitter:rule_y_jitter": "D7 rule-y jitter stress; one representative.",
+    "hf.jitter:evenodd_jitter": "D7 even/odd mirror + jitter stress; one representative.",
+    "wm.jitter:position_jitter": "D7 watermark position jitter stress; one representative.",
+    "wm.jitter:rotation_opacity_jitter": "D7 watermark rotation/opacity jitter stress; one representative.",
+    "wm.jitter:variable_text_jitter": "D7 watermark variable-text + jitter stress; one representative.",
+    "wm.jitter:near_footer": "D7 watermark-near-footer stress; one representative.",
 }
 
 STRONG_OPACITY_THRESHOLD = 0.22
@@ -133,6 +155,53 @@ def derive_tags(case: Any) -> List[str]:
         if hf.support_pages is not None and len(hf.support_pages) < case.page.page_count:
             tags.add("hf.partial:partial_support")
 
+    # --- D7 common-region realism axes ---------------------------------------
+    enabled_hfs = [(s, s.kind or kk) for s, kk in
+                   ([(header, "header"), (footer, "footer")] + [(e, e.kind or "footer") for e in case.extra_regions])
+                   if s.enabled]
+    rule_kinds = {kk for s, kk in enabled_hfs if s.rule_line}
+    if {"header", "footer"} <= rule_kinds:
+        tags.add("hf.rule:both_rules")
+    elif "header" in rule_kinds:
+        tags.add("hf.rule:header_rule")
+    elif "footer" in rule_kinds:
+        tags.add("hf.rule:footer_rule")
+    else:
+        tags.add("hf.rule:none")
+
+    if enabled_hfs:
+        if any(s.first_page_suppressed for s, _ in enabled_hfs):
+            tags.add("hf.support:first_page_suppressed")
+        elif any(s.support_pages is not None and len(s.support_pages) < case.page.page_count for s, _ in enabled_hfs):
+            tags.add("hf.support:partial_support")
+        else:
+            tags.add("hf.support:all_pages")
+
+    has_xy_jit = any(s.jitter_x or s.jitter_y for s, _ in enabled_hfs)
+    has_rule_jit = any(s.rule_jitter_y for s, _ in enabled_hfs)
+    has_evenodd_jit = any(s.mirrored_even_odd and (s.jitter_x or s.jitter_y) for s, _ in enabled_hfs)
+    if has_xy_jit:
+        tags.add("hf.jitter:xy_jitter")
+    if has_rule_jit:
+        tags.add("hf.jitter:rule_y_jitter")
+    if has_evenodd_jit:
+        tags.add("hf.jitter:evenodd_jitter")
+    if not (has_xy_jit or has_rule_jit):
+        tags.add("hf.jitter:none")
+
+    if not any(h.startswith("hf.page_number_position:") for h in case.coverage_hints):
+        pn = "none"
+        for s, _ in enabled_hfs:
+            if "{pages}" in s.text_template:
+                pn = "page_x_of_y"
+                break
+            if "{page}" in s.text_template:
+                pn = "bottom_center"
+        tags.add(f"hf.page_number_position:{pn}")
+    if not any(h.startswith("hf.subtitle_position:") for h in case.coverage_hints):
+        sub = "centered" if any("{subtitle}" in s.text_template for s, _ in enabled_hfs) else "none"
+        tags.add(f"hf.subtitle_position:{sub}")
+
     # --- watermark axis ------------------------------------------------------
     wm = case.watermark
     if not wm.enabled:
@@ -144,6 +213,20 @@ def derive_tags(case: Any) -> List[str]:
         tags.add(f"wm.rotation:{'diagonal' if abs(wm.rotation_deg) > 0.01 else 'rot0'}")
         if wm.image_like:
             tags.add("wm.image:image_like")
+    # wm.jitter (D7): emitted for every case so 'none' is abundant
+    if case.watermark.enabled and (case.watermark.jitter_pos or case.watermark.jitter_rot
+                                   or case.watermark.jitter_opacity or case.watermark.near_footer):
+        w = case.watermark
+        if w.jitter_pos:
+            tags.add("wm.jitter:position_jitter")
+        if w.jitter_rot or w.jitter_opacity:
+            tags.add("wm.jitter:rotation_opacity_jitter")
+        if w.variable_text and (w.jitter_pos or w.jitter_rot or w.jitter_opacity):
+            tags.add("wm.jitter:variable_text_jitter")
+        if w.near_footer:
+            tags.add("wm.jitter:near_footer")
+    else:
+        tags.add("wm.jitter:none")
 
     # --- figure axis ---------------------------------------------------------
     figs_by_page: Dict[int, int] = Counter()

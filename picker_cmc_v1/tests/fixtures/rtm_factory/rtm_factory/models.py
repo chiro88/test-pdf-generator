@@ -62,6 +62,13 @@ class HeaderFooterSpec:
     mirrored_even_odd: bool = False
     rule_line: bool = False
     support_pages: Optional[Sequence[int]] = None
+    # D7 realism: kind is used for extra_regions; jitter amplitudes (pt) drive
+    # deterministic per-page offsets; first_page_suppressed hides page 1.
+    kind: str = ""
+    jitter_x: int = 0
+    jitter_y: int = 0
+    rule_jitter_y: int = 0
+    first_page_suppressed: bool = False
 
 
 @dataclass(frozen=True)
@@ -74,6 +81,11 @@ class WatermarkSpec:
     opacity: float = 0.15
     location: Literal["center", "corner"] = "center"
     image_like: bool = False
+    # D7 realism: deterministic per-page jitter amplitudes.
+    jitter_pos: int = 0
+    jitter_rot: float = 0.0
+    jitter_opacity: float = 0.0
+    near_footer: bool = False
 
 
 @dataclass(frozen=True)
@@ -127,6 +139,8 @@ class CaseSpec:
     negative_texts: Tuple[NegativeTextSpec, ...] = ()
     notes: str = ""
     coverage_hints: Tuple[str, ...] = ()
+    # D7: additional header/footer regions (e.g. multi-part left/center/right footer).
+    extra_regions: Tuple[HeaderFooterSpec, ...] = ()
 
 
 @dataclass(frozen=True)

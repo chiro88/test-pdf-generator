@@ -4,12 +4,17 @@ HEADER_TEMPLATES = {
     "chapter_page": "Chapter {chapter} · Page {page}",
     "subtitle_page": "{subtitle} · {page}",
     "plain": "Technical Reference Manual",
+    "subtitle_only": "{subtitle}",
+    "doc_title": "Synthetic Reference Guide",
 }
 
 FOOTER_TEMPLATES = {
     "confidential_page": "Confidential — {page}",
     "doc_rev_page": "Rev A · {page}",
     "plain": "Internal Use Only",
+    "page_only": "{page}",
+    "page_x_of_y": "Page {page} of {pages}",
+    "distribution_notice": "Synthetic distribution notice",
 }
 
 WATERMARK_TEMPLATES = {
@@ -43,10 +48,11 @@ USERS = [
 ]
 
 
-def render_template(template: str, *, page: int, page_offset: int = 0, chapter: int = 2, subtitle: str = "Overview", user: str = "user@example.test") -> str:
+def render_template(template: str, *, page: int, page_offset: int = 0, chapter: int = 2, subtitle: str = "Overview", user: str = "user@example.test", pages: int = 1) -> str:
     return template.format(
         page=page + page_offset,
         chapter=chapter,
         subtitle=subtitle,
         user=user,
+        pages=pages + page_offset,
     )

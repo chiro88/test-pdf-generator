@@ -35,6 +35,20 @@ from .scenario_specs import all_cases
 from .self_check import run_self_check
 
 DEFAULT_GALLERY = Path("rtm_gallery")
+SEED = 1234
+
+
+class _ArgparseError(Exception):
+    """argparse error captured so it can be re-emitted as JSON when --json is set."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class _JsonAwareParser(argparse.ArgumentParser):
+    def error(self, message):  # noqa: D401 - argparse hook
+        raise _ArgparseError(message)
 
 
 # --- shared building blocks --------------------------------------------------
@@ -57,7 +71,7 @@ def generate_gallery(out_dir: Path | str, seed: int = 1234, force: bool = False)
                 "preview": f"{case.case_id}/{png_paths[0].name}",
                 "page_count": len(truth["pages"]), "coverage_tags": derive_tags(case),
             })
-        write_manifest(out, entries, coverage_summary(cases))
+        write_manifest(out, entries, coverage_summary(cases), seed=seed)
         write_index(out, cases)
     except Exception as exc:  # noqa: BLE001 - surface as a clean error
         raise RtmError("PDF_GENERATION_FAILED", f"gallery generation failed: {exc}")
@@ -67,7 +81,7 @@ def generate_gallery(out_dir: Path | str, seed: int = 1234, force: bool = False)
         raise RtmError("SELF_CHECK_FAILED", str(exc))
     ov = report["text_overlap"]
     return {
-        "gallery": str(out), "case_count": len(cases),
+        "gallery": str(out), "case_count": len(cases), "seed": seed,
         "manifest": str(out / "MANIFEST.json"), "index": str(out / "index.md"),
         "self_check_report": str(out / "SELF_CHECK_REPORT.json"),
         "text_overlap": {"checked": ov["checked"], "passed": ov["passed"], "skipped": len(ov["skipped"])},
@@ -190,10 +204,10 @@ def cmd_overlay(args) -> Dict[str, Any]:
 
 # --- argument parser ---------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="rtm_cli", description="RTM PDF factory CLI (LLM/agent friendly).")
+    p = _JsonAwareParser(prog="rtm_cli", description="RTM PDF factory CLI (LLM/agent friendly).")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--json", action="store_true", help="emit a single machine-readable JSON object to stdout")
-    sub = p.add_subparsers(dest="command", required=True)
+    sub = p.add_subparsers(dest="command", required=True, parser_class=_JsonAwareParser)
 
     def add(name, help_):
         return sub.add_parser(name, help=help_, parents=[common])
@@ -245,17 +259,27 @@ def _emit(payload: Dict[str, Any], as_json: bool) -> None:
         print(f"{cmd}: ok" + (f" — {json.dumps(extra, ensure_ascii=False)}" if extra else ""))
 
 
+def _emit_error(exc: RtmError, as_json: bool) -> int:
+    if as_json:
+        print(json.dumps(exc.to_json(), ensure_ascii=False))
+    else:
+        print(f"error [{exc.error_code}]: {exc.message}", file=sys.stderr)
+    return exc.exit_code
+
+
 def main(argv: Optional[List[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    if argv is None:
+        argv = sys.argv[1:]
+    as_json = "--json" in argv  # known before parsing, so argparse errors can be JSON too
+    try:
+        args = build_parser().parse_args(argv)
+    except _ArgparseError as exc:
+        return _emit_error(RtmError("INVALID_INPUT", exc.message), as_json)
     as_json = args.json
     try:
         payload = args.func(args)
     except RtmError as exc:
-        if as_json:
-            print(json.dumps(exc.to_json(), ensure_ascii=False))
-        else:
-            print(f"error [{exc.error_code}]: {exc.message}", file=sys.stderr)
-        return exc.exit_code
+        return _emit_error(exc, as_json)
     exit_code = 1 if payload.get("passed") is False else 0
     _emit(payload, as_json)
     return exit_code

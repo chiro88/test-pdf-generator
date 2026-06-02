@@ -40,7 +40,7 @@ def main() -> None:
                 "coverage_tags": derive_tags(case),
             }
         )
-    write_manifest(GALLERY_DIR, entries, coverage_summary(cases))
+    write_manifest(GALLERY_DIR, entries, coverage_summary(cases), seed=SEED)
     write_index(GALLERY_DIR, cases)
     report = run_self_check(GALLERY_DIR)
     ov = report["text_overlap"]

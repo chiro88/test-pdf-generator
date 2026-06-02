@@ -7,11 +7,17 @@ from typing import Any, Dict, List
 from .models import CaseSpec
 
 
-def write_manifest(gallery_dir: Path, entries: List[Dict[str, Any]], coverage: Dict[str, Any] | None = None) -> None:
+def write_manifest(gallery_dir: Path, entries: List[Dict[str, Any]], coverage: Dict[str, Any] | None = None,
+                   seed: int | None = None) -> None:
     manifest = {
         "schema_version": "rtm-gallery-v0",
         "coordinate_unit": "pdf_pt",
         "coordinate_origin": "top-left",
+        "generation": {
+            "seed": seed,
+            "note": "v0 scenarios are a deterministic fixed set; seed is recorded for provenance "
+                    "and does not alter the generated cases (reserved for future jitter/randomized expansion).",
+        },
         "coverage_summary": coverage or {},
         "cases": entries,
     }

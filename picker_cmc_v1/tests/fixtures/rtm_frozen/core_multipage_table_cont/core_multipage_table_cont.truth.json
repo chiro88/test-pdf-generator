@@ -1,0 +1,204 @@
+{
+  "case_id": "core_multipage_table_cont",
+  "axes": {
+    "core": "multipage_table_cont",
+    "table": "continuation_3parts",
+    "suffix": "(cont)",
+    "pages": 3
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 2 · 1",
+          "variable_text": true
+        },
+        {
+          "kind": "footer",
+          "bbox": [
+            48.0,
+            740.0,
+            564.0,
+            774.0
+          ],
+          "text": "Confidential — 1",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "2.1",
+          "title": "Register map",
+          "table_group_id": "tbl_002_001",
+          "part_index": 1,
+          "is_continuation": false,
+          "continuation_marker": null,
+          "caption_region": [
+            54.0,
+            90.0,
+            558.0,
+            118.0
+          ],
+          "body_region": [
+            54.0,
+            128.0,
+            558.0,
+            710.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            82.0,
+            566.0,
+            718.0
+          ]
+        }
+      ],
+      "non_target_text_regions": []
+    },
+    {
+      "page": 2,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 3 · 2",
+          "variable_text": true
+        },
+        {
+          "kind": "footer",
+          "bbox": [
+            48.0,
+            740.0,
+            564.0,
+            774.0
+          ],
+          "text": "Confidential — 2",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "2.1",
+          "title": "Register map",
+          "table_group_id": "tbl_002_001",
+          "part_index": 2,
+          "is_continuation": true,
+          "continuation_marker": "(cont)",
+          "caption_region": [
+            54.0,
+            90.0,
+            558.0,
+            118.0
+          ],
+          "body_region": [
+            54.0,
+            128.0,
+            558.0,
+            710.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            82.0,
+            566.0,
+            718.0
+          ],
+          "continued_from": "tbl_002_001"
+        }
+      ],
+      "non_target_text_regions": []
+    },
+    {
+      "page": 3,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 4 · 3",
+          "variable_text": true
+        },
+        {
+          "kind": "footer",
+          "bbox": [
+            48.0,
+            740.0,
+            564.0,
+            774.0
+          ],
+          "text": "Confidential — 3",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "2.1",
+          "title": "Register map",
+          "table_group_id": "tbl_002_001",
+          "part_index": 3,
+          "is_continuation": true,
+          "continuation_marker": "(cont)",
+          "caption_region": [
+            54.0,
+            90.0,
+            558.0,
+            118.0
+          ],
+          "body_region": [
+            54.0,
+            128.0,
+            558.0,
+            710.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            82.0,
+            566.0,
+            718.0
+          ],
+          "continued_from": "tbl_002_001"
+        }
+      ],
+      "non_target_text_regions": []
+    }
+  ]
+}

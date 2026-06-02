@@ -1,0 +1,34 @@
+{
+  "case_id": "neg_plain_text_only",
+  "axes": {
+    "negative": "ordinary_text_no_regions",
+    "pages": 1
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "case_id": "neg_false_see_table_above",
+  "axes": {
+    "negative": "see_table_above_phrase"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            240.0
+          ],
+          "role": "body_filler"
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            310.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

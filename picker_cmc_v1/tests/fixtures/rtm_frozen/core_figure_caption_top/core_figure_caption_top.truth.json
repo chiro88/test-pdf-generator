@@ -1,0 +1,63 @@
+{
+  "case_id": "core_figure_caption_top",
+  "axes": {
+    "core": "figure_caption_top",
+    "figure": "caption_above_body",
+    "index": "A.1",
+    "body": "diagram"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [
+        {
+          "kind": "figure",
+          "index": "A.1",
+          "title": "Reset path block diagram",
+          "caption_region": [
+            54.0,
+            126.0,
+            558.0,
+            154.0
+          ],
+          "body_region": [
+            54.0,
+            165.0,
+            558.0,
+            430.0
+          ],
+          "context_region": [
+            46.0,
+            118.0,
+            566.0,
+            438.0
+          ],
+          "body_kind": "diagram",
+          "title_position": "above",
+          "title_body_gap_lines": 1
+        }
+      ],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            438.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

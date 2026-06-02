@@ -1,0 +1,142 @@
+{
+  "case_id": "exp_hf_evenodd_mirror_with_jitter",
+  "axes": {
+    "header": "evenodd_mirror_jitter",
+    "pages": 4
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 2 · 1",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    },
+    {
+      "page": 2,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            51.0,
+            20.0,
+            567.0,
+            56.0
+          ],
+          "text": "Section 3 · 2",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    },
+    {
+      "page": 3,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            47.0,
+            17.0,
+            563.0,
+            53.0
+          ],
+          "text": "Section 4 · 3",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    },
+    {
+      "page": 4,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            50.0,
+            19.0,
+            566.0,
+            55.0
+          ],
+          "text": "Section 1 · 4",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

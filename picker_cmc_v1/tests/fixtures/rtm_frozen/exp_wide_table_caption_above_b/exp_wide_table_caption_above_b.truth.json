@@ -1,0 +1,64 @@
+{
+  "case_id": "exp_wide_table_caption_above_b",
+  "axes": {
+    "table": "single_page_wide",
+    "width": "wide"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "14.3",
+          "title": "Wide register field map",
+          "table_group_id": "tbl_014_003",
+          "part_index": 1,
+          "is_continuation": false,
+          "continuation_marker": null,
+          "caption_region": [
+            36.0,
+            120.0,
+            576.0,
+            146.0
+          ],
+          "body_region": [
+            36.0,
+            156.0,
+            576.0,
+            476.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            28.0,
+            112.0,
+            584.0,
+            484.0
+          ]
+        }
+      ],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            484.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

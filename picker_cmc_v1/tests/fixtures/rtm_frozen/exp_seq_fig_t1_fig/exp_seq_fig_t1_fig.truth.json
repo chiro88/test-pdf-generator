@@ -1,0 +1,114 @@
+{
+  "case_id": "exp_seq_fig_t1_fig",
+  "axes": {
+    "sequence": "figure_text1_figure"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [
+    {
+      "type": "figure",
+      "id": "3-5"
+    },
+    {
+      "type": "non_target_text",
+      "line_count": 1
+    },
+    {
+      "type": "figure",
+      "id": "3-6"
+    }
+  ],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [
+        {
+          "kind": "figure",
+          "index": "3-5",
+          "title": "Sampled output",
+          "caption_region": [
+            54.0,
+            248.0,
+            558.0,
+            266.0
+          ],
+          "body_region": [
+            54.0,
+            96.0,
+            558.0,
+            236.0
+          ],
+          "context_region": [
+            46.0,
+            88.0,
+            566.0,
+            274.0
+          ],
+          "body_kind": "waveform",
+          "title_position": "below",
+          "title_body_gap_lines": 1
+        },
+        {
+          "kind": "figure",
+          "index": "3-6",
+          "title": "PLL lock detail",
+          "caption_region": [
+            54.0,
+            454.0,
+            558.0,
+            472.0
+          ],
+          "body_region": [
+            54.0,
+            302.0,
+            558.0,
+            442.0
+          ],
+          "context_region": [
+            46.0,
+            294.0,
+            566.0,
+            480.0
+          ],
+          "body_kind": "diagram",
+          "title_position": "below",
+          "title_body_gap_lines": 1
+        }
+      ],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            278.0,
+            558.0,
+            290.0
+          ],
+          "role": "interstitial_text",
+          "line_count": 1,
+          "between": [
+            "figure:3-5",
+            "figure:3-6"
+          ]
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            480.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

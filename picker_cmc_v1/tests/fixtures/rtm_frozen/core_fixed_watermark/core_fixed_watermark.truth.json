@@ -1,0 +1,47 @@
+{
+  "case_id": "core_fixed_watermark",
+  "axes": {
+    "core": "fixed_watermark",
+    "watermark": "center_rot45_fixed",
+    "pages": 1
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "watermark",
+          "bbox": [
+            140.0,
+            300.0,
+            470.0,
+            500.0
+          ],
+          "text": "CONFIDENTIAL",
+          "rotation_deg": 45
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

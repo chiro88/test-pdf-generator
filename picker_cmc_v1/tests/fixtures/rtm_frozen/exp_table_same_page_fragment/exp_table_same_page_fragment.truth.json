@@ -1,0 +1,82 @@
+{
+  "case_id": "exp_table_same_page_fragment",
+  "axes": {
+    "table": "same_page_fragment"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "15.2",
+          "title": "Bus arbitration order",
+          "table_group_id": "tbl_015_002",
+          "part_index": 1,
+          "is_continuation": false,
+          "continuation_marker": null,
+          "caption_region": [
+            54.0,
+            100.0,
+            558.0,
+            126.0
+          ],
+          "body_region": [
+            54.0,
+            136.0,
+            558.0,
+            386.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            92.0,
+            566.0,
+            394.0
+          ]
+        },
+        {
+          "kind": "table",
+          "index": "15.2",
+          "title": "Bus arbitration order",
+          "table_group_id": "tbl_015_002",
+          "part_index": 2,
+          "is_continuation": true,
+          "continuation_marker": "(cont)",
+          "caption_region": [
+            54.0,
+            420.0,
+            558.0,
+            446.0
+          ],
+          "body_region": [
+            54.0,
+            456.0,
+            558.0,
+            706.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            412.0,
+            566.0,
+            714.0
+          ],
+          "continued_from": "tbl_015_002"
+        }
+      ],
+      "non_target_text_regions": []
+    }
+  ]
+}

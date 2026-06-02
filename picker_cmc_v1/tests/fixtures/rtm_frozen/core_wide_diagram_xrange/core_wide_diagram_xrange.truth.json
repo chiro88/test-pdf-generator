@@ -1,0 +1,92 @@
+{
+  "case_id": "core_wide_diagram_xrange",
+  "axes": {
+    "core": "wide_diagram_xrange",
+    "figure": "wide_page_body",
+    "columns": "two"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [
+        {
+          "kind": "figure",
+          "index": "2-7",
+          "title": "Page-wide datapath overview",
+          "caption_region": [
+            54.0,
+            500.0,
+            558.0,
+            528.0
+          ],
+          "body_region": [
+            40.0,
+            170.0,
+            572.0,
+            492.0
+          ],
+          "context_region": [
+            32.0,
+            162.0,
+            580.0,
+            536.0
+          ],
+          "body_kind": "mixed",
+          "title_position": "below",
+          "title_body_gap_lines": 1
+        }
+      ],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            295.0,
+            162.0
+          ],
+          "role": "body_filler"
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            536.0,
+            295.0,
+            706.0
+          ],
+          "role": "body_filler"
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            317.0,
+            86.0,
+            558.0,
+            162.0
+          ],
+          "role": "body_filler"
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            317.0,
+            536.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

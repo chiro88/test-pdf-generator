@@ -1,0 +1,68 @@
+{
+  "case_id": "exp_gap_tbl_above_g0",
+  "axes": {
+    "title_gap": "tbl_above_g0"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [
+    {
+      "type": "table",
+      "id": "13-1"
+    }
+  ],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [],
+      "figures": [],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "13-1",
+          "title": "Timing parameters",
+          "table_group_id": "tbl_gap_13_1",
+          "part_index": 1,
+          "is_continuation": false,
+          "continuation_marker": null,
+          "caption_region": [
+            54.0,
+            96.0,
+            558.0,
+            114.0
+          ],
+          "body_region": [
+            54.0,
+            114.0,
+            558.0,
+            344.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 0,
+          "context_region": [
+            46.0,
+            88.0,
+            566.0,
+            352.0
+          ]
+        }
+      ],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            352.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

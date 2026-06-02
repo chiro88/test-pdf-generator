@@ -1,0 +1,142 @@
+{
+  "case_id": "exp_hfseq_jitter_table_t1_fig",
+  "axes": {
+    "sequence": "table_text1_figure",
+    "hf": "jitter"
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [
+    {
+      "type": "table",
+      "id": "16-1"
+    },
+    {
+      "type": "non_target_text",
+      "line_count": 1
+    },
+    {
+      "type": "figure",
+      "id": "16-1"
+    }
+  ],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 2 · 1",
+          "variable_text": true
+        },
+        {
+          "kind": "footer",
+          "bbox": [
+            48.0,
+            740.0,
+            564.0,
+            774.0
+          ],
+          "text": "Confidential — 1",
+          "variable_text": true
+        }
+      ],
+      "figures": [
+        {
+          "kind": "figure",
+          "index": "16-1",
+          "title": "Mode transition",
+          "caption_region": [
+            54.0,
+            464.0,
+            558.0,
+            482.0
+          ],
+          "body_region": [
+            54.0,
+            312.0,
+            558.0,
+            452.0
+          ],
+          "context_region": [
+            46.0,
+            304.0,
+            566.0,
+            490.0
+          ],
+          "body_kind": "waveform",
+          "title_position": "below",
+          "title_body_gap_lines": 1
+        }
+      ],
+      "tables": [
+        {
+          "kind": "table",
+          "index": "16-1",
+          "title": "Mode table",
+          "table_group_id": "tbl_seq_16_1",
+          "part_index": 1,
+          "is_continuation": false,
+          "continuation_marker": null,
+          "caption_region": [
+            54.0,
+            96.0,
+            558.0,
+            114.0
+          ],
+          "body_region": [
+            54.0,
+            126.0,
+            558.0,
+            276.0
+          ],
+          "title_position": "above",
+          "title_body_gap_lines": 1,
+          "context_region": [
+            46.0,
+            88.0,
+            566.0,
+            284.0
+          ]
+        }
+      ],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            288.0,
+            558.0,
+            300.0
+          ],
+          "role": "interstitial_text",
+          "line_count": 1,
+          "between": [
+            "table:16-1",
+            "figure:16-1"
+          ]
+        },
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            490.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

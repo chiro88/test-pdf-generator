@@ -1,0 +1,112 @@
+{
+  "case_id": "core_variable_subtitle_header",
+  "axes": {
+    "core": "variable_subtitle_header",
+    "header_footer": "header_variable_subtitle",
+    "pages": 3,
+    "page_offset": 10
+  },
+  "realistic": true,
+  "intentional_overlap_stress": false,
+  "layout_sequence": [],
+  "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 2 · 11",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    },
+    {
+      "page": 2,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 3 · 12",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    },
+    {
+      "page": 3,
+      "width": 612.0,
+      "height": 792.0,
+      "common_regions": [
+        {
+          "kind": "header",
+          "bbox": [
+            48.0,
+            18.0,
+            564.0,
+            54.0
+          ],
+          "text": "Section 4 · 13",
+          "variable_text": true
+        }
+      ],
+      "figures": [],
+      "tables": [],
+      "non_target_text_regions": [
+        {
+          "kind": "non_target_text",
+          "bbox": [
+            54.0,
+            86.0,
+            558.0,
+            706.0
+          ],
+          "role": "body_filler"
+        }
+      ]
+    }
+  ]
+}

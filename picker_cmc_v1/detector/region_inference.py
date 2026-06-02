@@ -15,6 +15,30 @@ from .models import InferredRegion
 _LINE = 12.0
 _CLUSTER_GAP = 24.0
 _CONTEXT_MARGIN = 8.0
+_CAP_PAD_TOP = 1.0
+_CAP_PAD_BOTTOM = 10.0
+
+
+_CONTENT_MARGIN = 54.0
+
+
+def caption_band(caption_lines: List[List[float]], body_bbox, page_w: float) -> List[float]:
+    """Expand the caption text line(s) into a caption BAND.
+
+    RTM captions span the content column (page margins), not just the text run,
+    so x-range = [margin, page_w - margin] (clamped to include the text). y-range
+    is the merged caption text bbox + small padding. Multiline captions merge.
+    """
+    ty0 = min(l[1] for l in caption_lines)
+    ty1 = max(l[3] for l in caption_lines)
+    tx0 = min(l[0] for l in caption_lines)
+    tx1 = max(l[2] for l in caption_lines)
+    return [
+        max(0.0, min(_CONTENT_MARGIN, tx0)),
+        max(0.0, ty0 - _CAP_PAD_TOP),
+        min(page_w, max(page_w - _CONTENT_MARGIN, tx1)),
+        ty1 + _CAP_PAD_BOTTOM,
+    ]
 
 
 def cluster_drawings(drawings: List[List[float]], zone: tuple[float, float]) -> List[List[float]]:

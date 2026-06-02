@@ -1,0 +1,9 @@
+# Regenerable RTM factory output (rebuild with: python rtm_factory/generate.py)
+picker_cmc_v1/tests/fixtures/rtm_gallery/
+
+# Generated handoff bundle
+docs/cc_handoff/D2_handoff.tar.gz
+
+# Python caches
+__pycache__/
+*.pyc

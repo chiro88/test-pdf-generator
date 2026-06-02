@@ -7,10 +7,22 @@ detector's answer key can verify ordering and non-target interstitial text.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from .layout import band
 from .models import CaseSpec, FigureSpec, InterstitialTextSpec, PageSpec, TableSpec
+
+
+def canonical_table_group_id(index: str) -> str:
+    """D12.5: PDF-derivable canonical table id (must match the detector rule).
+
+    '2.1'->tbl_002_001, '10.1'->tbl_010_001, '5-1'->tbl_005_001, 'A.1'->tbl_A_001,
+    '13-1'->tbl_013_001.
+    """
+    comps = [p.zfill(3) if p.isdigit() else p.upper() for p in re.split(r"[.\-]", index) if p != ""]
+    return "tbl_" + "_".join(comps)
+
 
 LINE = 12.0          # one text line, in points (used for gaps + interstitial heights)
 CAP_H = 18.0         # single-line caption height
@@ -49,9 +61,12 @@ class SequenceBuilder:
         self.y = bottom + ITEM_GAP
         return self
 
-    def table(self, index: str, title: str, group: str, *, caption_pos: str = "above", gap_lines: int = 1,
-              body_h: float = 170.0, rows: int = 7, cols: int = 4, part: int = 1,
+    def table(self, index: str, title: str, group: Optional[str] = None, *, caption_pos: str = "above",
+              gap_lines: int = 1, body_h: float = 170.0, rows: int = 7, cols: int = 4, part: int = 1,
               cont: bool = False, marker: Optional[str] = None) -> "SequenceBuilder":
+        # D12.5: table_group_id must be PDF-derivable; always use the canonical id
+        # (the explicit `group` arg, if any, is ignored so sequence/gap truth is canonical).
+        group = canonical_table_group_id(index)
         gap = gap_lines * LINE
         if caption_pos == "below":
             body = band(self.x0, self.y, self.x1, self.y + body_h)

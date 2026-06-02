@@ -203,8 +203,9 @@ def core_cases() -> List[CaseSpec]:
             axes={"core": "same_title_tables", "table": "same_title_distinct_groups", "pages": 1},
             page=PageSpec(page_count=1),
             tables=(
-                TableSpec("4.2", "Electrical characteristics", band(54, 96, 558, 120), band(54, 130, 558, 310), "tbl_004_002_a", page=1, rows=5),
-                TableSpec("4.2", "Electrical characteristics", band(54, 390, 558, 414), band(54, 424, 558, 650), "tbl_004_002_b", page=1, rows=6),
+                # D12.5: independent same-index tables use occurrence-based canonical ids.
+                TableSpec("4.2", "Electrical characteristics", band(54, 96, 558, 120), band(54, 130, 558, 310), "tbl_004_002", page=1, rows=5),
+                TableSpec("4.2", "Electrical characteristics", band(54, 390, 558, 414), band(54, 424, 558, 650), "tbl_004_003", page=1, rows=6),
             ),
             notes="Two separate tables with the same visible title on the same page.",
         ),

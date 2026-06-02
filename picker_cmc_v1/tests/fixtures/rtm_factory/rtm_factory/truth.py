@@ -12,6 +12,7 @@ def case_truth_json(case: CaseSpec, pages: List[PageTruth]) -> Dict[str, Any]:
         "case_id": case.case_id,
         "axes": case.axes,
         "realistic": case.realistic,
+        "intentional_overlap_stress": case.intentional_overlap_stress,
         "coordinate_unit": "pdf_pt",
         "coordinate_origin": "top-left",
         "pages": [p.to_json() for p in pages],

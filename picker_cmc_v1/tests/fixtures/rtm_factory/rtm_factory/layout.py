@@ -47,3 +47,31 @@ def page_jitter(page_no: int, amp_x: int, amp_y: int) -> tuple[float, float]:
 def jittered_bbox(bbox: BBox, page_no: int, amp_x: int, amp_y: int) -> BBox:
     dx, dy = page_jitter(page_no, amp_x, amp_y)
     return BBox(bbox.x0 + dx, bbox.y0 + dy, bbox.x1 + dx, bbox.y1 + dy)
+
+
+def merge_intervals(intervals):
+    """Merge a list of (y0, y1) intervals into sorted, non-overlapping spans."""
+    out = []
+    for a, b in sorted(intervals):
+        if out and a <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+
+
+def free_y_bands(top: float, bottom: float, occupied, min_height: float):
+    """Return the [top, bottom] sub-bands NOT covered by any occupied (y0, y1)."""
+    bands = []
+    cursor = top
+    for a, b in merge_intervals(occupied):
+        if a > bottom:
+            break
+        if a - cursor >= min_height:
+            bands.append((cursor, min(a, bottom)))
+        cursor = max(cursor, b)
+        if cursor >= bottom:
+            break
+    if bottom - cursor >= min_height:
+        bands.append((cursor, bottom))
+    return bands

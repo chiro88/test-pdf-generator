@@ -309,12 +309,37 @@ def run_self_check(gallery_dir: Path) -> dict:
     if not coverage or "counts" not in coverage:
         errors.append("MANIFEST.json missing machine-readable coverage_summary (T2.8)")
 
+    # --- D9: generic body text must not overlap target regions (truth contamination) ---
+    contamination = 0
+    for cid, truth in truths.items():
+        if truth.get("intentional_overlap_stress"):
+            continue
+        for page in truth.get("pages", []):
+            targets: list[tuple[str, list]] = []
+            for f in page.get("figures", []):
+                for r in ("caption_region", "body_region", "context_region"):
+                    if f.get(r):
+                        targets.append((f"figure {f.get('index')} {r}", f[r]))
+            for t in page.get("tables", []):
+                for r in ("caption_region", "body_region", "context_region"):
+                    if t.get(r):
+                        targets.append((f"table {t.get('index')} {r}", t[r]))
+            for nt in page.get("non_target_text_regions", []):
+                nb = nt["bbox"]
+                for label, tb in targets:
+                    if _iou(nb, tb) > 0.0:
+                        contamination += 1
+                        errors.append(
+                            f"{cid} p{page['page']}: generic body text {nb} overlaps target {label} {tb} "
+                            f"(truth contamination; set intentional_overlap_stress=true only if deliberate)")
+
     # --- D3.5: truth-region vs PDF text-extraction overlap (handoff T2.1) -----
     overlap_errors, overlap_report = check_text_overlap(gallery_dir, case_ids)
     errors.extend(overlap_errors)
     # Persist a durable self-check report so skip reasons are never silent.
     (gallery_dir / "SELF_CHECK_REPORT.json").write_text(
-        json.dumps({"text_overlap": overlap_report}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps({"text_overlap": overlap_report,
+                    "generic_text_target_overlaps": contamination}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 

@@ -141,6 +141,9 @@ class CaseSpec:
     coverage_hints: Tuple[str, ...] = ()
     # D7: additional header/footer regions (e.g. multi-part left/center/right footer).
     extra_regions: Tuple[HeaderFooterSpec, ...] = ()
+    # D9: when true, generic body text is allowed to overlap target regions
+    # (an explicit overlap stress case); otherwise self_check fails on overlap.
+    intentional_overlap_stress: bool = False
 
 
 @dataclass(frozen=True)
@@ -225,6 +228,8 @@ class PageTruth:
     common_regions: List[RegionTruth] = field(default_factory=list)
     figures: List[FigureTruth] = field(default_factory=list)
     tables: List[TableTruth] = field(default_factory=list)
+    # D9: interstitial / body text bands that are NOT detection targets.
+    non_target_text_regions: List[BBox] = field(default_factory=list)
 
     def to_json(self) -> Dict[str, Any]:
         return {
@@ -234,4 +239,7 @@ class PageTruth:
             "common_regions": [r.to_json() for r in self.common_regions],
             "figures": [f.to_json() for f in self.figures],
             "tables": [t.to_json() for t in self.tables],
+            "non_target_text_regions": [
+                {"kind": "non_target_text", "bbox": b.to_list()} for b in self.non_target_text_regions
+            ],
         }

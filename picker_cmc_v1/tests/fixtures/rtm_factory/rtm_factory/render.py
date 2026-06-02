@@ -10,30 +10,69 @@ from .builders.header_footer import draw_header_or_footer
 from .builders.negative import draw_negative_text
 from .builders.table import draw_table
 from .builders.watermark import draw_watermark
-from .layout import assert_bbox_in_page, page_dimensions
-from .models import CaseSpec, PageTruth
+from .layout import assert_bbox_in_page, band, context_from, free_y_bands, page_dimensions
+from .models import BBox, CaseSpec, PageTruth
 
 
 def render_png(page: fitz.Page, scale: float = 110 / 72) -> bytes:
     return page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False).tobytes("png")
 
 
-def _add_body_filler(page: fitz.Page, width: float, height: float, page_no: int, columns: int) -> None:
+_FILLER_SENTENCE = (
+    "This synthetic body paragraph provides ordinary page texture without copyrighted source text; "
+    "it carries numeric values and inline references that must not be detected as a caption or table."
+)
+_BODY_TOP = 86.0
+_BODY_MARGIN = 86.0
+_MIN_BAND = 34.0  # skip gaps too small to hold readable body text
+
+
+def _page_target_rects(case: CaseSpec, page_no: int, width: float, height: float):
+    """Context rectangles that body filler must avoid on this page (targets + negatives)."""
+    rects = []
+    for fig in case.figures:
+        if fig.page == page_no:
+            rects.append(context_from(fig.caption_region, fig.body_region, fig.context_margin, width, height))
+    for tbl in case.tables:
+        if tbl.page == page_no:
+            rects.append(context_from(tbl.caption_region, tbl.body_region, tbl.context_margin, width, height))
+    for neg in case.negative_texts:
+        if neg.page == page_no:
+            rects.append(neg.bbox)
+    return rects
+
+
+def _add_body_filler(page: fitz.Page, case: CaseSpec, page_no: int, width: float, height: float):
+    """Target-aware filler: fill ONLY the free interstitial bands, never the
+    figure/table target regions. Returns the BBox of each filled band so they
+    can be recorded as non-target text regions in truth."""
     left = 54.0
     right = width - 54.0
-    top = 86.0
-    bottom = height - 86.0
+    top = _BODY_TOP
+    bottom = height - _BODY_MARGIN
+    columns = case.page.columns
     col_gap = 22.0
     col_w = (right - left - (columns - 1) * col_gap) / columns
-    filler = (
-        "This synthetic paragraph exercises realistic page texture without carrying copyrighted source text. "
-        "It intentionally includes ordinary engineering prose, numeric values, and references that should not be detected as captions."
-    )
+    targets = _page_target_rects(case, page_no, width, height)
+
+    placed: List[BBox] = []
     for col in range(columns):
         x0 = left + col * (col_w + col_gap)
-        rect = fitz.Rect(x0, top, x0 + col_w, bottom)
-        text = "\n".join([filler for _ in range(4 if columns == 2 else 6)])
-        page.insert_textbox(rect, text, fontsize=8, fontname="helv", color=(0.18, 0.18, 0.18), lineheight=1.15)
+        x1 = x0 + col_w
+        occupied = [(r.y0, r.y1) for r in targets if not (r.x1 <= x0 or r.x0 >= x1)]
+        for by0, by1 in free_y_bands(top, bottom, occupied, _MIN_BAND):
+            rect = fitz.Rect(x0, by0, x1, by1)
+            # Size the text to the band so insert_textbox actually renders it
+            # (it draws nothing if the full string overflows). Budget chars from
+            # band capacity, then trim with a safety factor.
+            chars_per_line = max(10, int(col_w / 4.3))
+            visual_lines = max(1, int((by1 - by0) / (8 * 1.3)))
+            budget = int(chars_per_line * visual_lines * 0.85)
+            unit = _FILLER_SENTENCE + " "
+            text = (unit * (budget // len(unit) + 1))[:budget].rstrip()
+            page.insert_textbox(rect, text, fontsize=8, fontname="helv", color=(0.18, 0.18, 0.18), lineheight=1.3)
+            placed.append(band(x0, by0, x1, by1))
+    return placed
 
 
 def build_pdf(case: CaseSpec, case_dir: Path) -> Tuple[dict, List[Path]]:
@@ -46,7 +85,7 @@ def build_pdf(case: CaseSpec, case_dir: Path) -> Tuple[dict, List[Path]]:
     for page_no in range(1, case.page.page_count + 1):
         page = doc.new_page(width=width, height=height)
         page_truth = PageTruth(page=page_no, width=width, height=height)
-        _add_body_filler(page, width, height, page_no, case.page.columns)
+        page_truth.non_target_text_regions.extend(_add_body_filler(page, case, page_no, width, height))
 
         for kind, spec in (("header", case.header), ("footer", case.footer)):
             region = draw_header_or_footer(page, spec, kind=kind, page_no=page_no, page_offset=case.page.page_offset, page_width=width, page_count=case.page.page_count)

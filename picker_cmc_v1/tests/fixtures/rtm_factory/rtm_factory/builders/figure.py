@@ -72,6 +72,10 @@ def draw_figure(page: fitz.Page, spec: FigureSpec, *, page_width: float, page_he
     caption_text = FIGURE_CAPTION_TEMPLATES[spec.alias].format(index=spec.index, title=spec.title)
     page.insert_textbox(fitz.Rect(*spec.caption_region.to_list()), caption_text, fontsize=9, fontname="helv", align=0)
     context = context_from(spec.caption_region, spec.body_region, spec.context_margin, page_width, page_height)
+    if spec.caption_position == "below":
+        gap_pt = spec.caption_region.y0 - spec.body_region.y1
+    else:
+        gap_pt = spec.body_region.y0 - spec.caption_region.y1
     return FigureTruth(
         kind="figure",
         index=spec.index,
@@ -80,4 +84,6 @@ def draw_figure(page: fitz.Page, spec: FigureSpec, *, page_width: float, page_he
         body_region=spec.body_region,
         context_region=context,
         body_kind=spec.body_template,
+        title_position=spec.caption_position,
+        title_body_gap_lines=int(round(max(0.0, gap_pt) / 12.0)),
     )

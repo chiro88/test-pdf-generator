@@ -116,6 +116,17 @@ class TableSpec:
     context_margin: float = 8.0
     rows: int = 8
     cols: int = 4
+    caption_position: Literal["above", "below"] = "above"
+
+
+@dataclass(frozen=True)
+class InterstitialTextSpec:
+    """Controlled body text (1-2 lines) placed BETWEEN two targets in a sequence."""
+    bbox: BBox
+    line_count: int = 1
+    text: str = ""
+    between: Optional[Tuple[str, str]] = None
+    page: int = 1
 
 
 @dataclass(frozen=True)
@@ -144,6 +155,9 @@ class CaseSpec:
     # D9: when true, generic body text is allowed to overlap target regions
     # (an explicit overlap stress case); otherwise self_check fails on overlap.
     intentional_overlap_stress: bool = False
+    # D9 step2: controlled interstitial text between targets + ordered layout sequence.
+    interstitial_texts: Tuple[InterstitialTextSpec, ...] = ()
+    layout_sequence: Tuple[Dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -174,6 +188,8 @@ class FigureTruth:
     body_region: BBox
     context_region: BBox
     body_kind: str
+    title_position: str = "below"
+    title_body_gap_lines: int = 0
 
     def to_json(self) -> Dict[str, Any]:
         return {
@@ -184,6 +200,8 @@ class FigureTruth:
             "body_region": self.body_region.to_list(),
             "context_region": self.context_region.to_list(),
             "body_kind": self.body_kind,
+            "title_position": self.title_position,
+            "title_body_gap_lines": self.title_body_gap_lines,
         }
 
 
@@ -200,6 +218,8 @@ class TableTruth:
     body_region: BBox
     context_region: Optional[BBox] = None
     continued_from: Optional[str] = None
+    title_position: str = "above"
+    title_body_gap_lines: int = 0
 
     def to_json(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {
@@ -212,11 +232,30 @@ class TableTruth:
             "continuation_marker": self.continuation_marker,
             "caption_region": self.caption_region.to_list(),
             "body_region": self.body_region.to_list(),
+            "title_position": self.title_position,
+            "title_body_gap_lines": self.title_body_gap_lines,
         }
         if self.context_region is not None:
             out["context_region"] = self.context_region.to_list()
         if self.continued_from is not None:
             out["continued_from"] = self.continued_from
+        return out
+
+
+@dataclass
+class NonTargetTruth:
+    """A non-target text band: generic body filler or controlled interstitial text."""
+    bbox: BBox
+    role: str = "body_filler"            # body_filler | interstitial_text
+    line_count: Optional[int] = None
+    between: Optional[Tuple[str, str]] = None
+
+    def to_json(self) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"kind": "non_target_text", "bbox": self.bbox.to_list(), "role": self.role}
+        if self.line_count is not None:
+            out["line_count"] = self.line_count
+        if self.between is not None:
+            out["between"] = list(self.between)
         return out
 
 
@@ -229,7 +268,7 @@ class PageTruth:
     figures: List[FigureTruth] = field(default_factory=list)
     tables: List[TableTruth] = field(default_factory=list)
     # D9: interstitial / body text bands that are NOT detection targets.
-    non_target_text_regions: List[BBox] = field(default_factory=list)
+    non_target_text_regions: List[NonTargetTruth] = field(default_factory=list)
 
     def to_json(self) -> Dict[str, Any]:
         return {
@@ -239,7 +278,5 @@ class PageTruth:
             "common_regions": [r.to_json() for r in self.common_regions],
             "figures": [f.to_json() for f in self.figures],
             "tables": [t.to_json() for t in self.tables],
-            "non_target_text_regions": [
-                {"kind": "non_target_text", "bbox": b.to_list()} for b in self.non_target_text_regions
-            ],
+            "non_target_text_regions": [n.to_json() for n in self.non_target_text_regions],
         }

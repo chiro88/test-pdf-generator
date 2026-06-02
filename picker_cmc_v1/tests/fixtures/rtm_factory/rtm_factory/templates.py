@@ -6,6 +6,7 @@ HEADER_TEMPLATES = {
     "plain": "Technical Reference Manual",
     "subtitle_only": "{subtitle}",
     "doc_title": "Synthetic Reference Guide",
+    "two_line": "Synthetic Reference — Chapter {chapter}\nSubsection {chapter}.2 — Timing detail",
 }
 
 FOOTER_TEMPLATES = {
@@ -15,6 +16,7 @@ FOOTER_TEMPLATES = {
     "page_only": "{page}",
     "page_x_of_y": "Page {page} of {pages}",
     "distribution_notice": "Synthetic distribution notice",
+    "bar_two_line": "Synthetic distribution — internal use only\nDocument 7788 · Page {page}",
 }
 
 WATERMARK_TEMPLATES = {

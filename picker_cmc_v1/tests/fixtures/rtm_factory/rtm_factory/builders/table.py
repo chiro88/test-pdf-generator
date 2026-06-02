@@ -33,6 +33,10 @@ def draw_table(page: fitz.Page, spec: TableSpec, *, page_width: float, page_heig
         page.insert_text((rect.x0 + 4, rect.y0 + r * row_h + 12), f"R{r + (spec.part_index - 1) * 10}", fontsize=7)
 
     context = context_from(spec.caption_region, spec.body_region, spec.context_margin, page_width, page_height)
+    if spec.caption_position == "below":
+        gap_pt = spec.caption_region.y0 - spec.body_region.y1
+    else:
+        gap_pt = spec.body_region.y0 - spec.caption_region.y1
     return TableTruth(
         kind="table",
         index=spec.index,
@@ -45,4 +49,6 @@ def draw_table(page: fitz.Page, spec: TableSpec, *, page_width: float, page_heig
         body_region=spec.body_region,
         context_region=context,
         continued_from=spec.continued_from,
+        title_position=spec.caption_position,
+        title_body_gap_lines=int(round(max(0.0, gap_pt) / 12.0)),
     )

@@ -219,6 +219,64 @@ def check_text_overlap(gallery_dir: Path, case_ids: list[str]) -> tuple[list[str
     return errors, report
 
 
+_LINE = 12.0
+
+
+def _check_layout_consistency(truths: dict) -> list[str]:
+    """D9 step2 gates: title position/gap, sequence y-order, interstitial height,
+    target↔target overlap. Strict; only intentional_overlap_stress is exempt."""
+    errs: list[str] = []
+    for cid, truth in truths.items():
+        stress = bool(truth.get("intentional_overlap_stress"))
+        for page in truth.get("pages", []):
+            pg = page["page"]
+            targets = list(page.get("figures", [])) + list(page.get("tables", []))
+            # title position / gap consistency
+            for obj in targets:
+                cap, body = obj.get("caption_region"), obj.get("body_region")
+                if not cap or not body:
+                    continue
+                pos = obj.get("title_position")
+                if pos == "above" and not (cap[1] <= body[1]):
+                    errs.append(f"{cid} p{pg} {obj.get('index')}: title_position=above but caption y0 {cap[1]} >= body y0 {body[1]}")
+                if pos == "below" and not (cap[1] >= body[1]):
+                    errs.append(f"{cid} p{pg} {obj.get('index')}: title_position=below but caption y0 {cap[1]} <= body y0 {body[1]}")
+                gap_pt = (cap[1] - body[3]) if pos == "below" else (body[1] - cap[3])
+                actual = int(round(max(0.0, gap_pt) / _LINE))
+                if actual != obj.get("title_body_gap_lines"):
+                    errs.append(f"{cid} p{pg} {obj.get('index')}: title_body_gap_lines={obj.get('title_body_gap_lines')} but actual {actual}")
+            # target ↔ target unintended overlap (caption/body across distinct objects)
+            if not stress:
+                boxes = []
+                for obj in targets:
+                    for r in ("caption_region", "body_region"):
+                        if obj.get(r):
+                            boxes.append((f"{obj.get('index')}.{r}", obj[r]))
+                for i in range(len(boxes)):
+                    for j in range(i + 1, len(boxes)):
+                        if _iou(boxes[i][1], boxes[j][1]) > 0.0:
+                            errs.append(f"{cid} p{pg}: targets overlap {boxes[i][0]} vs {boxes[j][0]}")
+            # interstitial line_count vs height
+            for nt in page.get("non_target_text_regions", []):
+                if nt.get("role") == "interstitial_text" and nt.get("line_count"):
+                    h = nt["bbox"][3] - nt["bbox"][1]
+                    if abs(h - nt["line_count"] * _LINE) > 2.0:
+                        errs.append(f"{cid} p{pg}: interstitial line_count={nt['line_count']} but height {h:.1f} != {nt['line_count'] * _LINE}")
+        # layout_sequence order vs actual y order
+        seq = truth.get("layout_sequence", [])
+        id_top = {}
+        for page in truth.get("pages", []):
+            for f in page.get("figures", []):
+                id_top[("figure", f["index"])] = min(f["caption_region"][1], f["body_region"][1])
+            for t in page.get("tables", []):
+                id_top[("table", t["index"])] = min(t["caption_region"][1], t["body_region"][1])
+        tops = [id_top[(it["type"], it["id"])] for it in seq
+                if it.get("type") in ("figure", "table") and (it["type"], it.get("id")) in id_top]
+        if tops != sorted(tops):
+            errs.append(f"{cid}: layout_sequence order does not match actual y order: {tops}")
+    return errs
+
+
 def run_self_check(gallery_dir: Path) -> dict:
     manifest_path = gallery_dir / "MANIFEST.json"
     index_path = gallery_dir / "index.md"
@@ -256,8 +314,8 @@ def run_self_check(gallery_dir: Path) -> dict:
         if name not in case_id_set:
             errors.append(f"missing negative scenario by name: {name}")
     total_cases = len(case_ids)
-    if not (30 <= total_cases <= 50):
-        errors.append(f"total case count out of 30-50 range: {total_cases}")
+    if not (30 <= total_cases <= 80):
+        errors.append(f"total case count out of 30-80 range: {total_cases}")
 
     # --- axis coverage gate (handoff T1 / T2.3) ------------------------------
     # Recompute coverage independently from per-case coverage_tags in the
@@ -332,6 +390,9 @@ def run_self_check(gallery_dir: Path) -> dict:
                         errors.append(
                             f"{cid} p{page['page']}: generic body text {nb} overlaps target {label} {tb} "
                             f"(truth contamination; set intentional_overlap_stress=true only if deliberate)")
+
+    # --- D9 step2: layout sequence / title-gap consistency --------------------
+    errors.extend(_check_layout_consistency(truths))
 
     # --- D3.5: truth-region vs PDF text-extraction overlap (handoff T2.1) -----
     overlap_errors, overlap_report = check_text_overlap(gallery_dir, case_ids)

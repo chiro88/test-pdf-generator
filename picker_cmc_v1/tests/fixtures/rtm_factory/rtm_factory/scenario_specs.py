@@ -12,6 +12,7 @@ from .models import (
     TableSpec,
     WatermarkSpec,
 )
+from .sequence import SequenceBuilder
 from .templates import FOOTER_TEMPLATES, HEADER_TEMPLATES, WATERMARK_TEMPLATES
 
 
@@ -574,5 +575,114 @@ def expanded_cases() -> List[CaseSpec]:
     return cases
 
 
+def _seq_header_two_line() -> HeaderFooterSpec:
+    return HeaderFooterSpec(True, band(48, 18, 564, 58), HEADER_TEMPLATES["two_line"], True, rule_line=True)
+
+
+def _seq_footer_bar_two_line() -> HeaderFooterSpec:
+    return HeaderFooterSpec(True, band(48, 726, 564, 770), FOOTER_TEMPLATES["bar_two_line"], True, rule_line=True)
+
+
+def d9_sequence_cases() -> List[CaseSpec]:
+    """D9 step2: curated figure/table sequence + title/gap + header-combined cases.
+
+    Bodies/captions are stacked by SequenceBuilder so the layout_sequence order
+    matches actual y-order, and interstitial 1/2-line text is recorded as
+    non-target with metadata. Bodies kept modest so two targets fit one page.
+    """
+    cases: List[CaseSpec] = []
+
+    # --- 10 required sequence cases ----------------------------------------
+    sb = SequenceBuilder()
+    sb.figure("3-3", "Reset sequence timing", body_kind="waveform", body_h=150).figure("3-4", "Clock distribution path", body_kind="diagram", body_h=150)
+    cases.append(sb.build_case("exp_seq_fig_fig", {"sequence": "figure_figure"}, coverage_hints=("seq:figure_figure",),
+                               notes="Two figures stacked with no interstitial text."))
+
+    sb = SequenceBuilder()
+    sb.figure("3-5", "Sampled output", body_kind="waveform", body_h=140).text(1).figure("3-6", "PLL lock detail", body_kind="diagram", body_h=140)
+    cases.append(sb.build_case("exp_seq_fig_t1_fig", {"sequence": "figure_text1_figure"}, coverage_hints=("seq:figure_text_figure",),
+                               notes="Figure, one-line interstitial text, figure."))
+
+    sb = SequenceBuilder()
+    sb.figure("4-1", "Power domains", body_kind="diagram", body_h=140).text(2).figure("4-2", "Sequenced enables", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_seq_fig_t2_fig", {"sequence": "figure_text2_figure"}, coverage_hints=("seq:figure_text_figure",),
+                               notes="Figure, two-line interstitial text, figure."))
+
+    sb = SequenceBuilder()
+    sb.figure("5-1", "Bus topology", body_kind="diagram", body_h=150).table("5-1", "Bus signal map", "tbl_seq_5_1", body_h=150)
+    cases.append(sb.build_case("exp_seq_fig_table", {"sequence": "figure_table"}, coverage_hints=("seq:figure_table",),
+                               notes="Figure directly followed by a table."))
+
+    sb = SequenceBuilder()
+    sb.table("6-1", "Register summary", "tbl_seq_6_1", body_h=160).figure("6-1", "Register access timing", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_seq_table_fig", {"sequence": "table_figure"}, coverage_hints=("seq:table_figure",),
+                               notes="Table directly followed by a figure."))
+
+    sb = SequenceBuilder()
+    sb.table("7-1", "DC characteristics", "tbl_seq_7_1", body_h=150).table("7-2", "AC characteristics", "tbl_seq_7_2", body_h=150)
+    cases.append(sb.build_case("exp_seq_table_table", {"sequence": "table_table"}, coverage_hints=("seq:table_table",),
+                               notes="Two tables stacked with no interstitial text."))
+
+    sb = SequenceBuilder()
+    sb.table("8-1", "Pin assignments", "tbl_seq_8_1", body_h=150).text(1).figure("8-1", "Pin timing", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_seq_table_t1_fig", {"sequence": "table_text1_figure"}, coverage_hints=("seq:table_text_figure",),
+                               notes="Table, one-line interstitial text, figure."))
+
+    sb = SequenceBuilder()
+    sb.table("9-1", "Interrupt map", "tbl_seq_9_1", body_h=150).text(2).figure("9-1", "Interrupt latency", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_seq_table_t2_fig", {"sequence": "table_text2_figure"}, coverage_hints=("seq:table_text_figure",),
+                               notes="Table, two-line interstitial text, figure."))
+
+    sb = SequenceBuilder()
+    sb.figure("10-1", "Memory layout", body_kind="diagram", body_h=140).text(1).table("10-1", "Memory regions", "tbl_seq_10_1", body_h=150)
+    cases.append(sb.build_case("exp_seq_fig_t1_table", {"sequence": "figure_text1_table"}, coverage_hints=("seq:figure_text_table",),
+                               notes="Figure, one-line interstitial text, table."))
+
+    sb = SequenceBuilder()
+    sb.figure("11-1", "DMA channels", body_kind="diagram", body_h=140).text(2).table("11-1", "DMA priorities", "tbl_seq_11_1", body_h=150)
+    cases.append(sb.build_case("exp_seq_fig_t2_table", {"sequence": "figure_text2_table"}, coverage_hints=("seq:figure_text_table",),
+                               notes="Figure, two-line interstitial text, table."))
+
+    # --- title position / gap combinations ---------------------------------
+    def _one(case_id, axes_v, hint, *, target, caption_pos, gap_lines):
+        b = SequenceBuilder()
+        if target == "figure":
+            b.figure("12-1", "Datapath overview", body_kind="diagram", caption_pos=caption_pos, gap_lines=gap_lines, body_h=220)
+        else:
+            b.table("13-1", "Timing parameters", "tbl_gap_13_1", caption_pos=caption_pos, gap_lines=gap_lines, body_h=230)
+        return b.build_case(case_id, {"title_gap": axes_v}, coverage_hints=(hint,),
+                            notes=f"{target} title {caption_pos}, gap {gap_lines} line(s).")
+
+    cases.append(_one("exp_gap_fig_above_g0", "fig_above_g0", "gap:fig_above", target="figure", caption_pos="above", gap_lines=0))
+    cases.append(_one("exp_gap_fig_above_g2", "fig_above_g2", "gap:fig_above", target="figure", caption_pos="above", gap_lines=2))
+    cases.append(_one("exp_gap_fig_below_g0", "fig_below_g0", "gap:fig_below", target="figure", caption_pos="below", gap_lines=0))
+    cases.append(_one("exp_gap_tbl_above_g0", "tbl_above_g0", "gap:tbl_above", target="table", caption_pos="above", gap_lines=0))
+    cases.append(_one("exp_gap_tbl_below_g0", "tbl_below_g0", "gap:tbl_below", target="table", caption_pos="below", gap_lines=0))
+    cases.append(_one("exp_gap_tbl_below_g2", "tbl_below_g2", "gap:tbl_below", target="table", caption_pos="below", gap_lines=2))
+
+    # --- header/footer combined sequence cases -----------------------------
+    sb = SequenceBuilder()
+    sb.figure("14-1", "Top-level block", body_kind="diagram", body_h=140).figure("14-2", "Subsystem detail", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_hfseq_2line_header_fig_fig", {"sequence": "figure_figure", "hf": "two_line_header"},
+                               coverage_hints=("seq:figure_figure",), header=_seq_header_two_line(),
+                               notes="Two-line running header above a figure-figure sequence."))
+
+    sb = SequenceBuilder()
+    sb.figure("15-1", "Interface diagram", body_kind="diagram", body_h=140).table("15-1", "Interface signals", "tbl_seq_15_1", body_h=150)
+    cases.append(sb.build_case("exp_hfseq_footerbar_fig_table", {"sequence": "figure_table", "hf": "footer_bar_two_line"},
+                               coverage_hints=("seq:figure_table",), footer=_seq_footer_bar_two_line(),
+                               notes="Figure-table sequence above a two-line ruled footer bar."))
+
+    sb = SequenceBuilder()
+    sb.table("16-1", "Mode table", "tbl_seq_16_1", body_h=150).text(1).figure("16-1", "Mode transition", body_kind="waveform", body_h=140)
+    cases.append(sb.build_case("exp_hfseq_jitter_table_t1_fig", {"sequence": "table_text1_figure", "hf": "jitter"},
+                               coverage_hints=("seq:table_text_figure",),
+                               header=HeaderFooterSpec(True, band(48, 18, 564, 54), HEADER_TEMPLATES["subtitle_page"], True, rule_line=True, jitter_x=3, jitter_y=2),
+                               footer=HeaderFooterSpec(True, band(48, 740, 564, 774), FOOTER_TEMPLATES["confidential_page"], True, rule_line=True, rule_jitter_y=2),
+                               notes="Table-text-figure sequence with jittered header and footer."))
+
+    return cases
+
+
 def all_cases() -> List[CaseSpec]:
-    return core_cases() + negative_cases() + expanded_cases()
+    return core_cases() + negative_cases() + expanded_cases() + d9_sequence_cases()

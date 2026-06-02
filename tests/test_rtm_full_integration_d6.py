@@ -70,7 +70,7 @@ def _perturb(det: dict, fn) -> dict:
 def test_full_gallery_generation_gate(gallery):
     manifest = json.loads((gallery / "MANIFEST.json").read_text(encoding="utf-8"))
     assert (gallery / "index.md").exists()
-    assert 30 <= len(manifest["cases"]) <= 50
+    assert 30 <= len(manifest["cases"]) <= 80
     cov = manifest["coverage_summary"]
     assert cov["missing"] == [] and cov["below_min"] == []
     assert manifest["generation"]["seed"] == 1234

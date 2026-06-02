@@ -11,7 +11,7 @@ from .builders.negative import draw_negative_text
 from .builders.table import draw_table
 from .builders.watermark import draw_watermark
 from .layout import assert_bbox_in_page, band, context_from, free_y_bands, page_dimensions
-from .models import BBox, CaseSpec, PageTruth
+from .models import BBox, CaseSpec, NonTargetTruth, PageTruth
 
 
 def render_png(page: fitz.Page, scale: float = 110 / 72) -> bytes:
@@ -28,7 +28,7 @@ _MIN_BAND = 34.0  # skip gaps too small to hold readable body text
 
 
 def _page_target_rects(case: CaseSpec, page_no: int, width: float, height: float):
-    """Context rectangles that body filler must avoid on this page (targets + negatives)."""
+    """Rectangles that body filler must avoid on this page (targets + negatives + interstitials)."""
     rects = []
     for fig in case.figures:
         if fig.page == page_no:
@@ -39,7 +39,20 @@ def _page_target_rects(case: CaseSpec, page_no: int, width: float, height: float
     for neg in case.negative_texts:
         if neg.page == page_no:
             rects.append(neg.bbox)
+    for it in case.interstitial_texts:
+        if it.page == page_no:
+            rects.append(it.bbox)
     return rects
+
+
+def _fit_text(page: fitz.Page, rect: fitz.Rect, col_w: float) -> None:
+    """Insert body filler sized to fit the rect (insert_textbox draws nothing on overflow)."""
+    chars_per_line = max(10, int(col_w / 4.3))
+    visual_lines = max(1, int((rect.y1 - rect.y0) / (8 * 1.3)))
+    budget = int(chars_per_line * visual_lines * 0.85)
+    unit = _FILLER_SENTENCE + " "
+    text = (unit * (budget // len(unit) + 1))[:budget].rstrip()
+    page.insert_textbox(rect, text, fontsize=8, fontname="helv", color=(0.18, 0.18, 0.18), lineheight=1.3)
 
 
 def _add_body_filler(page: fitz.Page, case: CaseSpec, page_no: int, width: float, height: float):
@@ -61,17 +74,8 @@ def _add_body_filler(page: fitz.Page, case: CaseSpec, page_no: int, width: float
         x1 = x0 + col_w
         occupied = [(r.y0, r.y1) for r in targets if not (r.x1 <= x0 or r.x0 >= x1)]
         for by0, by1 in free_y_bands(top, bottom, occupied, _MIN_BAND):
-            rect = fitz.Rect(x0, by0, x1, by1)
-            # Size the text to the band so insert_textbox actually renders it
-            # (it draws nothing if the full string overflows). Budget chars from
-            # band capacity, then trim with a safety factor.
-            chars_per_line = max(10, int(col_w / 4.3))
-            visual_lines = max(1, int((by1 - by0) / (8 * 1.3)))
-            budget = int(chars_per_line * visual_lines * 0.85)
-            unit = _FILLER_SENTENCE + " "
-            text = (unit * (budget // len(unit) + 1))[:budget].rstrip()
-            page.insert_textbox(rect, text, fontsize=8, fontname="helv", color=(0.18, 0.18, 0.18), lineheight=1.3)
-            placed.append(band(x0, by0, x1, by1))
+            _fit_text(page, fitz.Rect(x0, by0, x1, by1), col_w)
+            placed.append(NonTargetTruth(band(x0, by0, x1, by1), role="body_filler"))
     return placed
 
 
@@ -85,6 +89,15 @@ def build_pdf(case: CaseSpec, case_dir: Path) -> Tuple[dict, List[Path]]:
     for page_no in range(1, case.page.page_count + 1):
         page = doc.new_page(width=width, height=height)
         page_truth = PageTruth(page=page_no, width=width, height=height)
+
+        # Controlled interstitial text between sequence targets (recorded with metadata).
+        for it in case.interstitial_texts:
+            if it.page == page_no:
+                assert_bbox_in_page(it.bbox, width, height, f"{case.case_id}:interstitial")
+                _fit_text(page, fitz.Rect(*it.bbox.to_list()), it.bbox.width)
+                page_truth.non_target_text_regions.append(
+                    NonTargetTruth(it.bbox, role="interstitial_text", line_count=it.line_count, between=it.between))
+
         page_truth.non_target_text_regions.extend(_add_body_filler(page, case, page_no, width, height))
 
         for kind, spec in (("header", case.header), ("footer", case.footer)):

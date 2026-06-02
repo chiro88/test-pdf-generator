@@ -39,6 +39,20 @@ AXIS_REQUIREMENTS: Dict[str, List[str]] = {
     "hf.support": ["all_pages", "first_page_suppressed", "partial_support"],
     "hf.jitter": ["none", "xy_jitter", "rule_y_jitter", "evenodd_jitter"],
     "wm.jitter": ["none", "position_jitter", "rotation_opacity_jitter", "variable_text_jitter", "near_footer"],
+    # D9 step3 sequence / title-gap / interstitial / common-region-combo axes
+    "seq": [
+        "figure_figure", "figure_text1_figure", "figure_text2_figure", "figure_table",
+        "table_figure", "table_table", "table_text1_figure", "table_text2_figure",
+        "figure_text1_table", "figure_text2_table",
+    ],
+    "interstitial_text.lines": ["none", "one_line", "two_line"],
+    "title_gap": [
+        "figure_above_g0", "figure_above_g1", "figure_above_g2",
+        "figure_below_g0", "figure_below_g1", "figure_below_g2",
+        "table_above_g0", "table_above_g1", "table_above_g2",
+        "table_below_g0", "table_below_g1", "table_below_g2",
+    ],
+    "sequence.with_common_regions": ["no_common", "two_line_header", "footer_bar_two_lines", "jittered_common"],
     "wm.presence": ["none", "fixed", "variable"],
     "wm.location": ["center", "corner"],
     "wm.opacity": ["light", "strong"],
@@ -98,6 +112,30 @@ COVERAGE_EXCEPTIONS: Dict[str, str] = {
     "wm.jitter:rotation_opacity_jitter": "D7 watermark rotation/opacity jitter stress; one representative.",
     "wm.jitter:variable_text_jitter": "D7 watermark variable-text + jitter stress; one representative.",
     "wm.jitter:near_footer": "D7 watermark-near-footer stress; one representative.",
+    # D9 sequence + title-gap stress: one curated representative each.
+    "seq:figure_figure": "D9 sequence representative.",
+    "seq:figure_text1_figure": "D9 sequence representative.",
+    "seq:figure_text2_figure": "D9 sequence representative.",
+    "seq:figure_table": "D9 sequence representative.",
+    "seq:table_figure": "D9 sequence representative.",
+    "seq:table_table": "D9 sequence representative.",
+    "seq:table_text1_figure": "D9 sequence representative.",
+    "seq:table_text2_figure": "D9 sequence representative.",
+    "seq:figure_text1_table": "D9 sequence representative.",
+    "seq:figure_text2_table": "D9 sequence representative.",
+    "title_gap:figure_above_g0": "D9 title/gap cross-product representative.",
+    "title_gap:figure_above_g1": "D9 title/gap cross-product representative.",
+    "title_gap:figure_above_g2": "D9 title/gap cross-product representative.",
+    "title_gap:figure_below_g0": "D9 title/gap cross-product representative.",
+    "title_gap:figure_below_g2": "D9 title/gap cross-product representative.",
+    "title_gap:table_above_g0": "D9 title/gap cross-product representative.",
+    "title_gap:table_above_g2": "D9 title/gap cross-product representative.",
+    "title_gap:table_below_g0": "D9 title/gap cross-product representative.",
+    "title_gap:table_below_g1": "D9 title/gap cross-product representative.",
+    "title_gap:table_below_g2": "D9 title/gap cross-product representative.",
+    "sequence.with_common_regions:two_line_header": "D9 sequence+common-region representative.",
+    "sequence.with_common_regions:footer_bar_two_lines": "D9 sequence+common-region representative.",
+    "sequence.with_common_regions:jittered_common": "D9 sequence+common-region representative.",
 }
 
 STRONG_OPACITY_THRESHOLD = 0.22
@@ -265,6 +303,47 @@ def derive_tags(case: Any) -> List[str]:
             tags.add("tbl.title:same_title")
         if len(set(titles)) >= 2:
             tags.add("tbl.title:different_title")
+
+    # --- D9 step3: sequence / interstitial / title-gap / common-region combo --
+    n_targets = len(case.figures) + len(case.tables)
+    if case.layout_sequence:
+        sig = []
+        for it in case.layout_sequence:
+            if it["type"] == "figure":
+                sig.append("figure")
+            elif it["type"] == "table":
+                sig.append("table")
+            elif it["type"] == "non_target_text":
+                sig.append(f"text{it.get('line_count', 1)}")
+        if n_targets >= 2:
+            tags.add("seq:" + "_".join(sig))
+    line_counts = [it.get("line_count") for it in case.layout_sequence if it.get("type") == "non_target_text"]
+    if 1 in line_counts:
+        tags.add("interstitial_text.lines:one_line")
+    if 2 in line_counts:
+        tags.add("interstitial_text.lines:two_line")
+    if not line_counts:
+        tags.add("interstitial_text.lines:none")
+
+    def _gap_lines(cap, body, pos):
+        gap_pt = (cap.y0 - body.y1) if pos == "below" else (body.y0 - cap.y1)
+        return int(round(max(0.0, gap_pt) / 12.0))
+
+    for fig in case.figures:
+        tags.add(f"title_gap:figure_{fig.caption_position}_g{_gap_lines(fig.caption_region, fig.body_region, fig.caption_position)}")
+    for tbl in case.tables:
+        tags.add(f"title_gap:table_{tbl.caption_position}_g{_gap_lines(tbl.caption_region, tbl.body_region, tbl.caption_position)}")
+
+    if case.layout_sequence and n_targets >= 2:
+        enabled_hf = [s for s in ((case.header, case.footer) + tuple(case.extra_regions)) if s.enabled]
+        if not enabled_hf:
+            tags.add("sequence.with_common_regions:no_common")
+        if case.header.enabled and "\n" in case.header.text_template:
+            tags.add("sequence.with_common_regions:two_line_header")
+        if case.footer.enabled and "\n" in case.footer.text_template and case.footer.rule_line:
+            tags.add("sequence.with_common_regions:footer_bar_two_lines")
+        if any((s.jitter_x or s.jitter_y or s.rule_jitter_y) for s in enabled_hf):
+            tags.add("sequence.with_common_regions:jittered_common")
 
     # --- explicit, non-structural hints (neg.kind, fragment, ...) ------------
     for hint in case.coverage_hints:

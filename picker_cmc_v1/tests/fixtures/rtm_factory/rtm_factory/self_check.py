@@ -222,10 +222,19 @@ def check_text_overlap(gallery_dir: Path, case_ids: list[str]) -> tuple[list[str
 _LINE = 12.0
 
 
-def _check_layout_consistency(truths: dict) -> list[str]:
-    """D9 step2 gates: title position/gap, sequence y-order, interstitial height,
-    target↔target overlap. Strict; only intentional_overlap_stress is exempt."""
+def _check_layout_consistency(truths: dict) -> tuple[list[str], dict]:
+    """D9 gates: title position/gap, sequence y-order, interstitial height,
+    target↔target overlap. Strict; only intentional_overlap_stress is exempt.
+    Returns (errors, per-gate counts)."""
     errs: list[str] = []
+    counts = {
+        "target_target_unintended_overlaps": 0,
+        "sequence_order_failures": 0,
+        "interstitial_line_count_failures": 0,
+        "title_position_failures": 0,
+        "title_gap_failures": 0,
+        "checked": {"targets": 0, "interstitials": 0, "sequences": 0},
+    }
     for cid, truth in truths.items():
         stress = bool(truth.get("intentional_overlap_stress"))
         for page in truth.get("pages", []):
@@ -236,14 +245,18 @@ def _check_layout_consistency(truths: dict) -> list[str]:
                 cap, body = obj.get("caption_region"), obj.get("body_region")
                 if not cap or not body:
                     continue
+                counts["checked"]["targets"] += 1
                 pos = obj.get("title_position")
                 if pos == "above" and not (cap[1] <= body[1]):
+                    counts["title_position_failures"] += 1
                     errs.append(f"{cid} p{pg} {obj.get('index')}: title_position=above but caption y0 {cap[1]} >= body y0 {body[1]}")
                 if pos == "below" and not (cap[1] >= body[1]):
+                    counts["title_position_failures"] += 1
                     errs.append(f"{cid} p{pg} {obj.get('index')}: title_position=below but caption y0 {cap[1]} <= body y0 {body[1]}")
                 gap_pt = (cap[1] - body[3]) if pos == "below" else (body[1] - cap[3])
                 actual = int(round(max(0.0, gap_pt) / _LINE))
                 if actual != obj.get("title_body_gap_lines"):
+                    counts["title_gap_failures"] += 1
                     errs.append(f"{cid} p{pg} {obj.get('index')}: title_body_gap_lines={obj.get('title_body_gap_lines')} but actual {actual}")
             # target ↔ target unintended overlap (caption/body across distinct objects)
             if not stress:
@@ -255,15 +268,20 @@ def _check_layout_consistency(truths: dict) -> list[str]:
                 for i in range(len(boxes)):
                     for j in range(i + 1, len(boxes)):
                         if _iou(boxes[i][1], boxes[j][1]) > 0.0:
+                            counts["target_target_unintended_overlaps"] += 1
                             errs.append(f"{cid} p{pg}: targets overlap {boxes[i][0]} vs {boxes[j][0]}")
             # interstitial line_count vs height
             for nt in page.get("non_target_text_regions", []):
                 if nt.get("role") == "interstitial_text" and nt.get("line_count"):
+                    counts["checked"]["interstitials"] += 1
                     h = nt["bbox"][3] - nt["bbox"][1]
                     if abs(h - nt["line_count"] * _LINE) > 2.0:
+                        counts["interstitial_line_count_failures"] += 1
                         errs.append(f"{cid} p{pg}: interstitial line_count={nt['line_count']} but height {h:.1f} != {nt['line_count'] * _LINE}")
         # layout_sequence order vs actual y order
         seq = truth.get("layout_sequence", [])
+        if seq:
+            counts["checked"]["sequences"] += 1
         id_top = {}
         for page in truth.get("pages", []):
             for f in page.get("figures", []):
@@ -273,8 +291,9 @@ def _check_layout_consistency(truths: dict) -> list[str]:
         tops = [id_top[(it["type"], it["id"])] for it in seq
                 if it.get("type") in ("figure", "table") and (it["type"], it.get("id")) in id_top]
         if tops != sorted(tops):
+            counts["sequence_order_failures"] += 1
             errs.append(f"{cid}: layout_sequence order does not match actual y order: {tops}")
-    return errs
+    return errs, counts
 
 
 def run_self_check(gallery_dir: Path) -> dict:
@@ -391,19 +410,29 @@ def run_self_check(gallery_dir: Path) -> dict:
                             f"{cid} p{page['page']}: generic body text {nb} overlaps target {label} {tb} "
                             f"(truth contamination; set intentional_overlap_stress=true only if deliberate)")
 
-    # --- D9 step2: layout sequence / title-gap consistency --------------------
-    errors.extend(_check_layout_consistency(truths))
+    # --- D9 step2/3: layout sequence / title-gap consistency ------------------
+    layout_errors, layout_counts = _check_layout_consistency(truths)
+    errors.extend(layout_errors)
 
     # --- D3.5: truth-region vs PDF text-extraction overlap (handoff T2.1) -----
     overlap_errors, overlap_report = check_text_overlap(gallery_dir, case_ids)
     errors.extend(overlap_errors)
-    # Persist a durable self-check report so skip reasons are never silent.
+
+    d9_gates = {
+        "generic_text_target_overlaps": contamination,
+        "target_target_unintended_overlaps": layout_counts["target_target_unintended_overlaps"],
+        "sequence_order_failures": layout_counts["sequence_order_failures"],
+        "interstitial_line_count_failures": layout_counts["interstitial_line_count_failures"],
+        "title_position_failures": layout_counts["title_position_failures"],
+        "title_gap_failures": layout_counts["title_gap_failures"],
+        "checked": layout_counts["checked"],
+    }
+    # Persist a durable self-check report so skip reasons / gate results are never silent.
     (gallery_dir / "SELF_CHECK_REPORT.json").write_text(
-        json.dumps({"text_overlap": overlap_report,
-                    "generic_text_target_overlaps": contamination}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps({"text_overlap": overlap_report, "d9_gates": d9_gates}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 
     if errors:
         raise AssertionError("RTM factory self-check failed:\n" + "\n".join(errors))
-    return {"text_overlap": overlap_report}
+    return {"text_overlap": overlap_report, "d9_gates": d9_gates}

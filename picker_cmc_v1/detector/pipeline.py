@@ -95,7 +95,8 @@ def detect_pdf(pdf_path: str | Path) -> Dict[str, Any]:
                                            part_index=m["part_index"], is_continuation=m["is_continuation"],
                                            continuation_marker=m["continuation_marker"],
                                            continued_from=(m["group_id"] if m["is_continuation"] else None)))
-        common_regions = [writer.common_region(c["kind"], c["bbox"], c.get("text")) for c in commons[pi]]
+        common_regions = [writer.common_region(c["kind"], c["bbox"], c.get("text"), c.get("common_region_id"))
+                           for c in commons[pi]]
         out_pages.append(writer.page(page["page"], common_regions=common_regions, figures=figures, tables=tables))
 
     return {"pages": out_pages}

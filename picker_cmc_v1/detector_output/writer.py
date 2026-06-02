@@ -37,10 +37,13 @@ def table(index: str, title: str, group: str, caption: list, body: list, context
     return out
 
 
-def common_region(kind: str, bbox: list, text: Optional[str] = None) -> Dict[str, Any]:
+def common_region(kind: str, bbox: list, text: Optional[str] = None,
+                  common_region_id: Optional[str] = None) -> Dict[str, Any]:
     out = {"kind": kind, "bbox": bbox}
     if text is not None:
         out["text"] = text
+    if common_region_id is not None:
+        out["common_region_id"] = common_region_id
     return out
 
 

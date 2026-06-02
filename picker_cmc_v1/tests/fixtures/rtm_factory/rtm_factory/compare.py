@@ -27,6 +27,9 @@ class InvalidInput(Exception):
     """Raised for malformed truth/detected input (CLI maps this to exit code 2)."""
 
 
+DETECTED_SCHEMA_VERSION = "detector-output-v0"
+
+
 # --- tolerance ---------------------------------------------------------------
 # (x_pt, y_pt) per region type. y-band detection cares about y far more than x.
 STRICT_TOLERANCE: Dict[str, Tuple[float, float]] = {
@@ -207,8 +210,10 @@ def load_detected_manifest(path: Path | str) -> Dict[str, Dict[str, Any]]:
     if not path.exists():
         raise InvalidInput(f"detected manifest not found: {path}")
     data = json.loads(path.read_text(encoding="utf-8"))
-    if not data.get("schema_version"):
-        raise InvalidInput("detected manifest missing schema_version")
+    if data.get("schema_version") != DETECTED_SCHEMA_VERSION:
+        raise InvalidInput(
+            f"detected manifest schema_version must be {DETECTED_SCHEMA_VERSION!r} "
+            f"(got {data.get('schema_version')!r})")
     _require_coords(data, "detected manifest")
     return {c["case_id"]: c for c in data.get("cases", [])}
 

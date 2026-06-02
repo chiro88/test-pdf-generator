@@ -188,6 +188,15 @@ def test_missing_schema_version_is_invalid(tmp_path):
         load_detected_manifest(det_path)
 
 
+def test_wrong_schema_version_is_invalid(tmp_path):
+    det = _detected_from_truth()
+    det["schema_version"] = "wrong-version"
+    det_path = tmp_path / "detected.json"
+    det_path.write_text(json.dumps(det), encoding="utf-8")
+    with pytest.raises(InvalidInput):
+        load_detected_manifest(det_path)
+
+
 def test_report_files_created(tmp_path):
     rep = _run(tmp_path, _detected_from_truth())
     json_path, md_path = write_compare_report(rep, tmp_path / "artifacts")

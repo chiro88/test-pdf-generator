@@ -36,6 +36,8 @@ _LABEL_GAP = 16.0            # a label this close to the drawing core joins the 
 _ROW_GAP = 20.0             # text rows within this vertical gap are one contiguous table body
 _BODY_PAD = 2.0
 _MIN_TABLE_FRAME_H = 45.0    # a real grid frame is tall; a thin rule line is not
+_CLUSTER_GAP = 35.0          # drawings within this vertical gap form one diagram band;
+                             # a larger gap (e.g. a Note rule above a waveform) splits off
 
 
 def _area(r) -> float:
@@ -167,25 +169,53 @@ def _drawing_core(members: List[List[float]]) -> Optional[List[float]]:
     return core
 
 
+def _grow_cluster(zone_draw: List[List[float]], cap: List[float], side: str) -> List[List[float]]:
+    """Vertically-contiguous drawing band nearest the caption — so a figure takes its
+    own diagram band (incl. side-by-side boxes at the same y) but NOT a thin Note rule
+    / separator that sits across a larger gap above the actual waveform."""
+    if not zone_draw:
+        return []
+
+    def gap_to_cap(r):
+        return (cap[1] - r[3]) if side == "above" else (r[1] - cap[3])
+
+    seed_i = min(range(len(zone_draw)), key=lambda i: abs(gap_to_cap(zone_draw[i])))
+    band = {seed_i}
+    bbox = list(zone_draw[seed_i])
+    changed = True
+    while changed:
+        changed = False
+        for i, d in enumerate(zone_draw):
+            if i in band:
+                continue
+            vgap = max(d[1] - bbox[3], bbox[1] - d[3], 0.0)
+            if vgap <= _CLUSTER_GAP:
+                band.add(i)
+                bbox = _union(bbox, d)
+                changed = True
+    return [zone_draw[i] for i in band]
+
+
 def _expand_with_labels(core, lines, cap, hf_bands, wm_texts, zone) -> List[float]:
     """Grow the body to include short text labels (signal names/axis text) sharing
-    the core's y-band and adjacent to it — without swallowing paragraphs. Iterated
-    so a chain of labels (e.g. several left signal names) is pulled in transitively."""
+    the core's y-band and adjacent to it — without swallowing paragraphs or a Note
+    block above the diagram. Labels must y-overlap the drawing core (so prose above
+    the waveform is excluded); iterated so a chain of left signal names is pulled in."""
     lo, hi = zone
     body = list(core)
+    # candidates: short text lines that align with a drawing ROW (y-overlap the core),
+    # so left signal labels are pulled in but a Note/paragraph above the diagram is not.
     cands = [ln for ln in lines if ln.bbox[1] >= lo - 2 and ln.bbox[3] <= hi + 2
              and (ln.bbox[2] - ln.bbox[0]) <= _LABEL_MAX_W
+             and _y_overlap(ln.bbox, core, pad=2.0)
              and not _excluded(ln, cap, hf_bands, wm_texts)]
     changed = True
     while changed:
         changed = False
         for ln in cands:
             b = ln.bbox
-            if not _y_overlap(b, body, pad=2.0):
-                continue
             gap = max(body[0] - b[2], b[0] - body[2], 0.0)
-            if gap <= _LABEL_GAP and (b[0] < body[0] - 0.5 or b[2] > body[2] + 0.5
-                                      or b[1] < body[1] - 0.5 or b[3] > body[3] + 0.5):
+            if gap <= _LABEL_GAP and (b[0] < body[0] - 0.5 or b[2] > body[2] + 0.5):
                 body = _union(body, b)
                 changed = True
     return body
@@ -230,8 +260,14 @@ def infer_body(cap: List[float], kind: str, side: str, all_caps_sides: List[tupl
     lo, hi = zone
 
     on_side = (lambda r: r[3] <= cap[1] + 2) if side == "above" else (lambda r: r[1] >= cap[3] - 2)
+    # Column filter only in a genuine two-column layout (another caption side-by-side
+    # at a similar y). A lone wide figure with a short/offset caption keeps full width.
+    cap_cy = (cap[1] + cap[3]) / 2
+    two_col = any(abs((o[1] + o[3]) / 2 - cap_cy) < 25 and (o[2] <= cap[0] or o[0] >= cap[2])
+                  for o in others)
     zone_draw = [r for r in drawings if r[3] >= lo - 2 and r[1] <= hi + 2 and on_side(r)
-                 and _caption_x_overlap(r, cap) and _owns(r, cap, side, all_caps_sides)]
+                 and _owns(r, cap, side, all_caps_sides)
+                 and (not two_col or _caption_x_overlap(r, cap))]
 
     if kind == "table":
         # A real grid frame (tall AND wide) is the body; a bare rule line (zero
@@ -242,7 +278,9 @@ def infer_body(cap: List[float], kind: str, side: str, all_caps_sides: List[tupl
         if core is None:
             core = _table_rows_core(lines, cap, side, hf_bands, wm_texts, zone)
     else:
-        core = _drawing_core(zone_draw)
+        # Figure: the vertically-contiguous drawing band nearest the caption (the
+        # diagram/waveform), so a Note rule across a larger gap above is excluded.
+        core = _drawing_core(_grow_cluster(zone_draw, cap, side))
     if core is None:
         return None
 

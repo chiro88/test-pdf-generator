@@ -23,6 +23,7 @@ import fitz
 from detector_output import writer
 
 from .pipeline import detect_pdf
+from .review_feedback import build_review_template, object_id_for
 
 REVIEW_SCHEMA_VERSION = "rtm-review-v0"
 
@@ -155,12 +156,26 @@ def build_review_package(pdf_path: str | Path, out_dir: str | Path, *, name: Opt
                 crop_rel = f"crops/{kind}_{_safe_index(obj.get('index', 'x'))}_body.png"
                 ok = _render_crop(pdf_path, pno, obj.get("body_region"), crop_scale, out_dir / crop_rel)
                 crop_records.append({"page": pno, "kind": kind, "index": obj.get("index"),
+                                     "object_id": object_id_for(kind, obj.get("index"), pno),
                                      "title": obj.get("title"), "crop": crop_rel if ok else None,
                                      "caption_region": obj.get("caption_region"), "body_region": obj.get("body_region"),
                                      "context_region": obj.get("context_region"),
                                      "table_group_id": obj.get("table_group_id")})
 
     review_index = _write_review_index(out_dir, pdf_path, page_count, page_records, crop_records, warnings)
+
+    # D19: a pre-filled operator review template (every object -> decision: accept),
+    # ready for a reviewer to edit and feed to summarize_review_feedback.py.
+    template = build_review_template(pages, pdf_path.name)
+    try:
+        import yaml
+        (out_dir / "review_result.template.yaml").write_text(
+            yaml.safe_dump(template, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        template_rel = "review_result.template.yaml"
+    except Exception:
+        (out_dir / "review_result.template.json").write_text(
+            json.dumps(template, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        template_rel = "review_result.template.json"
 
     summary = {
         "ok": True,
@@ -175,6 +190,7 @@ def build_review_package(pdf_path: str | Path, out_dir: str | Path, *, name: Opt
         "artifacts": {
             "manifest": str(manifest_path.relative_to(out_dir)),
             "review_index": str(Path(review_index).relative_to(out_dir)),
+            "review_template": template_rel,
             "pages": [r["overlay"] for r in page_records],
             "crops": [c["crop"] for c in crop_records if c["crop"]],
         },
@@ -208,13 +224,17 @@ def _write_review_index(out_dir: Path, pdf_path: Path, page_count: int, page_rec
     if not crop_records:
         lines.append("_None detected._")
     else:
-        lines.append("| page | type | index | title | caption_region | body_region | context_region | crop |")
-        lines.append("|---|---|---|---|---|---|---|---|")
+        lines.append("Operator: copy `review_result.template.yaml`, set each `decision` "
+                     "(accept / bad_body_region / false_positive / …), then run "
+                     "`summarize_review_feedback.py`.")
+        lines.append("")
+        lines.append("| object_id | page | type | index | title | caption_region | body_region | context_region | crop | decision |")
+        lines.append("|---|---|---|---|---|---|---|---|---|---|")
         for c in crop_records:
             crop = f"[crop]({c['crop']})" if c.get("crop") else "—"
             title = (c.get("title") or "").replace("|", "\\|")
-            lines.append(f"| {c['page']} | {c['kind']} | {c.get('index','')} | {title} | "
-                         f"{c.get('caption_region')} | {c.get('body_region')} | {c.get('context_region')} | {crop} |")
+            lines.append(f"| `{c.get('object_id','')}` | {c['page']} | {c['kind']} | {c.get('index','')} | {title} | "
+                         f"{c.get('caption_region')} | {c.get('body_region')} | {c.get('context_region')} | {crop} | _(accept?)_ |")
     lines.append("")
     lines.append("## Warnings / known limitations")
     lines.append("")

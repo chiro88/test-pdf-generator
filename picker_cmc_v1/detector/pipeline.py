@@ -53,11 +53,11 @@ def detect_pdf(pdf_path: str | Path) -> Dict[str, Any]:
             region = infer_region(anchor.caption_bbox, frame_list, used, ex.width, ex.height)
             cap_lines = _multiline_caption(anchor.caption_bbox, ex.lines)
             if region is None:
-                cap = caption_band(cap_lines, None, ex.width)
+                cap = caption_band(cap_lines, None, ex.width, anchor.kind)
                 body, tpos, glines = list(cap), "below", 0
             else:
                 body = region.body
-                cap = caption_band(cap_lines, body, ex.width)
+                cap = caption_band(cap_lines, body, ex.width, anchor.kind)
                 tpos = region.title_position
                 glines = int(round(max(0.0, (cap[1] - body[3]) if tpos == "below" else (body[1] - cap[3])) / _LINE))
             records.append({"anchor": anchor, "caption": cap, "body": body,

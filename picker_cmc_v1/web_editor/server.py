@@ -182,6 +182,13 @@ def make_handler(ws: Workspace):
                     return self._send(200, editing.save(ctx))
                 if path == "/api/save-as":
                     return self._send(200, editing.save_as(ctx, str(body.get("path", ""))))
+                if path == "/api/export/downstream":
+                    from downstream_package.exporter import ExportError, build_package
+                    out = ctx.run_dir / "downstream_package"
+                    try:
+                        return self._send(200, build_package(ctx.manifest, out))
+                    except ExportError as exc:
+                        return self._send(400, {"ok": False, "error_code": "EXPORT_FAILED", "error": str(exc)})
                 return self._send(404, {"ok": False, "error": "not found"})
             except editing.EditError as exc:
                 return self._send(400, exc.to_dict())

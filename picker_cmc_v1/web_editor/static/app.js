@@ -250,6 +250,10 @@ function wireToolbar() {
     const path = prompt("Save As (relative to run dir):", "versions/edit_1.json"); if (!path) return;
     const r = await postJSON("/api/save-as", { path }); if (r.ok) updateDirty(false); else alert(`${r.error_code}: ${r.message}`);
   };
+  $("export-pkg").onclick = async () => {
+    const r = await postJSON("/api/export/downstream", {});
+    alert(r.ok ? `downstream package: ${r.objects} objects, ${r.crops} crops\n${r.package_manifest}` : `${r.error_code}: ${r.error}`);
+  };
 }
 
 boot();

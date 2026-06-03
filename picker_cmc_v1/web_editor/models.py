@@ -7,7 +7,7 @@ a detector-output-v0 manifest. The editor-save-manifest is the view source.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -35,6 +35,9 @@ class RunContext:
     source_pdf: str
     manifest: Dict[str, Any]          # editor-save-manifest-v0 (view source)
     manifest_path: Path
+    save_path: Path                   # where Save writes (editor_save_manifest.json)
+    page_sizes: Dict[int, tuple] = field(default_factory=dict)  # page -> (w, h) pt
+    dirty: bool = False               # unsaved edits in memory
 
     @property
     def pages(self) -> List[Dict[str, Any]]:
@@ -74,5 +77,17 @@ def load_run(run_dir: str | Path) -> RunContext:
         raise WebEditorError("RUN_MANIFEST_NOT_FOUND",
                              f"no editor_save_manifest.json or detected_manifest.json in {run_dir}")
 
-    return RunContext(run_dir=run_dir, source_pdf=manifest.get("source_pdf", ""),
-                      manifest=manifest, manifest_path=manifest_path)
+    source_pdf = manifest.get("source_pdf", "")
+    page_sizes: Dict[int, tuple] = {}
+    if source_pdf and Path(source_pdf).exists():
+        try:
+            import fitz
+            doc = fitz.open(source_pdf)
+            for i in range(doc.page_count):
+                page_sizes[i + 1] = (doc[i].rect.width, doc[i].rect.height)
+            doc.close()
+        except Exception:
+            page_sizes = {}                          # bounds check simply skipped
+    return RunContext(run_dir=run_dir, source_pdf=source_pdf, manifest=manifest,
+                      manifest_path=manifest_path, save_path=run_dir / "editor_save_manifest.json",
+                      page_sizes=page_sizes)

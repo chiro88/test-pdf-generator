@@ -38,3 +38,25 @@ main { display: flex; height: calc(100vh - 41px); }
 .ov.selected { border-width: 3px; box-shadow: 0 0 0 2px rgba(255,80,80,.55); }
 .ov .lbl { position: absolute; top: -15px; left: -2px; font-size: 10px; padding: 0 3px;
   background: rgba(255,255,255,.85); white-space: nowrap; }
+
+/* D24 edit/ruler/save */
+#toolbar .modes button.active { background: #3b6fe0; border-color: #5e8af0; }
+#toolbar #region-select { font: inherit; margin-left: 6px; }
+#toolbar .save-tools { display: flex; align-items: center; gap: 8px; }
+#dirty-badge { font-size: 11px; padding: 2px 7px; border-radius: 9px; }
+#dirty-badge.clean { background: #1f6f3f; color: #d9ffe6; }
+#dirty-badge.dirty { background: #b54708; color: #ffe9d6; }
+#readout { font: 12px/1.6 ui-monospace, monospace; padding: 3px 14px; background: #eef2fb;
+  border-bottom: 1px solid #dfe4ee; min-height: 22px; color: #2b3550; }
+
+.ov.editing { border-color: #d11; border-style: solid; pointer-events: auto; cursor: move; z-index: 5; }
+.ov.editing .handle { position: absolute; width: 9px; height: 9px; background: #fff; border: 1px solid #d11; }
+.handle.nw { left: -5px; top: -5px; cursor: nwse-resize; }
+.handle.ne { right: -5px; top: -5px; cursor: nesw-resize; }
+.handle.sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+.handle.se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+.handle.n { left: 50%; top: -5px; margin-left: -5px; cursor: ns-resize; }
+.handle.s { left: 50%; bottom: -5px; margin-left: -5px; cursor: ns-resize; }
+.handle.e { right: -5px; top: 50%; margin-top: -5px; cursor: ew-resize; }
+.handle.w { left: -5px; top: 50%; margin-top: -5px; cursor: ew-resize; }
+.ruler-pt { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #d11; pointer-events: none; }

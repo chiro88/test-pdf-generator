@@ -8,7 +8,7 @@
 </head>
 <body>
   <header id="toolbar">
-    <span class="brand">picker_cmc viewer <em>read-only (D23)</em></span>
+    <span class="brand">picker_cmc editor <em>D24</em></span>
     <span class="toggles">
       <label><input type="checkbox" data-kind="figure" checked> Figures</label>
       <label><input type="checkbox" data-kind="table" checked> Tables</label>
@@ -17,12 +17,19 @@
       <label><input type="checkbox" data-kind="watermark" checked> Watermark</label>
       <button id="toggle-all" type="button">Toggle all</button>
     </span>
-    <span class="disabled-tools">
-      <button type="button" disabled title="Coming in D24">Edit bbox (D24)</button>
-      <button type="button" disabled title="Coming in D24">Ruler (D24)</button>
-      <button type="button" disabled title="Coming in D24">Save (D24)</button>
+    <span class="modes">
+      <button id="mode-view" type="button" class="active">View</button>
+      <button id="mode-edit" type="button">Edit bbox</button>
+      <button id="mode-ruler" type="button">Ruler</button>
+      <select id="region-select" title="region to edit"></select>
+    </span>
+    <span class="save-tools">
+      <span id="dirty-badge" class="clean">saved</span>
+      <button id="save" type="button">Save</button>
+      <button id="save-as" type="button">Save As…</button>
     </span>
   </header>
+  <div id="readout"></div>
 
   <main>
     <aside id="tree">

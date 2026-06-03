@@ -113,7 +113,7 @@ def test_object_lookup(tmp_path):
 # (8) static assets served
 def test_static_assets(tmp_path):
     with _server(_make_run(tmp_path)) as (_, get):
-        assert b"picker_cmc viewer" in get("/")
+        assert b"picker_cmc" in get("/") and b"page-stage" in get("/")
         assert b"drawOverlays" in get("/static/app.js")
         assert b"#toolbar" in get("/static/styles.css")
 

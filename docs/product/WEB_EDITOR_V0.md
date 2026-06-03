@@ -63,8 +63,40 @@ before the server starts** (an invalid manifest is a structured load error).
 Bboxes are PDF points, top-left origin. The page is rendered at a fixed `scale`
 (1.5); overlays are positioned at `bbox * scale`. No axis flip.
 
-## Not in D23 (deferred to D24)
+## Editing (D24)
 
-- bbox drag / resize editing
-- saving edits back to `editor-save-manifest-v0`
-- ruler / measurement tool
+Switch the top toolbar to **Edit bbox** mode, select an object (tree or overlay),
+pick a region (`caption_region` / `body_region` / `context_region`, or `bbox` for a
+common region), then **drag to move** or use the **corner/edge handles to resize**.
+The live `[x0, y0, x1, y1]` (PDF pt, top-left) is shown in the readout bar. Each
+commit calls the API and appends to the manifest edit log; an **unsaved** badge
+tracks dirty state.
+
+### Edit / save API
+
+| endpoint | body / effect |
+|---|---|
+| `POST /api/edit/bbox` | `{object_id, region, bbox}` → `{ok, before, after, dirty}`; updates in memory + appends edit log |
+| `POST /api/save` | overwrite the run's `editor_save_manifest.json` (validate first) |
+| `POST /api/save-as` | `{path}` → write under the run dir (path-traversal rejected) |
+| `GET /api/edit-state` | `{dirty, edit_count, save_path}` |
+
+Edit validation (structured error `{ok:false, error_code, message, field}`):
+`EDIT_OBJECT_NOT_FOUND`, `EDIT_REGION_NOT_FOUND`, `EDIT_BAD_BBOX` (requires
+`x0<x1`, `y0<y1`), `EDIT_OUT_OF_PAGE_BOUNDS`, `SAVE_MANIFEST_INVALID`,
+`SAVE_PATH_NOT_ALLOWED`, `SAVE_WRITE_FAILED`.
+
+The manifest is **validated before every write**; edits are an append-only log, and
+Save-As preserves the original file. Coordinates stay PDF-pt / top-left
+(`screen_px → pdf_pt = px / scale`, no y-flip).
+
+### Ruler (D24, client-side only)
+
+Switch to **Ruler** mode: first click = start, second click = end. The readout
+shows start/end (PDF pt), `dx`, `dy`, and straight-line distance. Ruler data is
+**never persisted** to the manifest.
+
+## Not yet (later milestones)
+
+- multi-user / sessions, job queue, database
+- advanced setup UI

@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import manifest_view, page_render
+from . import editing, manifest_view, page_render
 from .models import RUN_SCHEMA_VERSION, RunContext
 
 _STATIC = Path(__file__).parent / "static"
@@ -88,6 +88,9 @@ def make_handler(ctx: RunContext):
                     ov = manifest_view.overlays(ctx.manifest, int(m.group(1)))
                     return self._send(200, ov) if ov else self._send(404, {"ok": False, "error": "page not found"})
 
+                if path == "/api/edit-state":
+                    return self._send(200, editing.edit_state(ctx))
+
                 m = re.match(r"^/api/object/(.+)$", path)
                 if m:
                     oid = unquote(m.group(1))
@@ -100,6 +103,28 @@ def make_handler(ctx: RunContext):
 
                 return self._send(404, {"ok": False, "error": "not found"})
             except Exception as exc:  # never crash the server thread on a bad request
+                return self._send(500, {"ok": False, "error": str(exc)})
+
+        def do_POST(self):
+            path = urlparse(self.path).path
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                raw = self.rfile.read(length) if length else b""
+                body = json.loads(raw) if raw else {}
+            except (ValueError, json.JSONDecodeError):
+                return self._send(400, {"ok": False, "error_code": "BAD_JSON", "message": "invalid JSON body"})
+            try:
+                if path == "/api/edit/bbox":
+                    return self._send(200, editing.edit_bbox(ctx, body.get("object_id"),
+                                                             body.get("region"), body.get("bbox")))
+                if path == "/api/save":
+                    return self._send(200, editing.save(ctx))
+                if path == "/api/save-as":
+                    return self._send(200, editing.save_as(ctx, str(body.get("path", ""))))
+                return self._send(404, {"ok": False, "error": "not found"})
+            except editing.EditError as exc:
+                return self._send(400, exc.to_dict())
+            except Exception as exc:
                 return self._send(500, {"ok": False, "error": str(exc)})
 
     return Handler

@@ -18,30 +18,30 @@
         {
           "kind": "footer",
           "bbox": [
-            48.0,
+            77.22,
             740.0,
-            220.0,
-            774.0
+            190.77,
+            775.0
           ],
           "text": "Synthetic Reference Guide"
         },
         {
           "kind": "footer",
           "bbox": [
-            225.0,
+            289.73,
             740.0,
-            470.0,
-            774.0
+            405.27,
+            775.0
           ],
           "text": "Synthetic distribution notice"
         },
         {
           "kind": "footer",
           "bbox": [
-            500.0,
+            526.5,
             740.0,
-            564.0,
-            774.0
+            537.5,
+            775.0
           ],
           "text": "1",
           "variable_text": true
@@ -70,30 +70,30 @@
         {
           "kind": "footer",
           "bbox": [
-            48.0,
+            77.22,
             740.0,
-            220.0,
-            774.0
+            190.77,
+            775.0
           ],
           "text": "Synthetic Reference Guide"
         },
         {
           "kind": "footer",
           "bbox": [
-            225.0,
+            289.73,
             740.0,
-            470.0,
-            774.0
+            405.27,
+            775.0
           ],
           "text": "Synthetic distribution notice"
         },
         {
           "kind": "footer",
           "bbox": [
-            500.0,
+            526.5,
             740.0,
-            564.0,
-            774.0
+            537.5,
+            775.0
           ],
           "text": "2",
           "variable_text": true

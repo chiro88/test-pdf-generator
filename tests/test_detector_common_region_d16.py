@@ -3,8 +3,8 @@
 Note on multipart footer: the frozen truth models a multipart footer as THREE
 separate footer regions (left/center/right). Emitting one merged band would make
 two of them 'missing'; to keep missing=0 the detector emits one band per
-fragment, matching the truth structure (only the authored fragment x-widths then
-fall outside tolerance).
+fragment, matching the truth structure. (D16.5 then corrected the fragment truth
+bboxes to the PDF-derivable rendered-text band, so they also match in x.)
 """
 from __future__ import annotations
 

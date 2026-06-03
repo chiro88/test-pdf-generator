@@ -18,10 +18,10 @@
         {
           "kind": "watermark",
           "bbox": [
-            119.0,
-            308.0,
-            499.0,
-            508.0
+            219.4,
+            290.0,
+            398.6,
+            364.47
           ],
           "text": "Licensed to user1@example.test",
           "variable_text": true,
@@ -51,10 +51,10 @@
         {
           "kind": "watermark",
           "bbox": [
-            122.0,
-            310.0,
-            502.0,
-            510.0
+            222.4,
+            292.0,
+            401.6,
+            366.47
           ],
           "text": "Licensed to user2@example.test",
           "variable_text": true,
@@ -84,10 +84,10 @@
         {
           "kind": "watermark",
           "bbox": [
-            116.0,
-            312.0,
-            496.0,
-            512.0
+            216.4,
+            294.0,
+            395.6,
+            368.47
           ],
           "text": "Licensed to user3@example.test",
           "variable_text": true,

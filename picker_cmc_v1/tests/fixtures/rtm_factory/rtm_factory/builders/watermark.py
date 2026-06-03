@@ -6,6 +6,7 @@ import fitz
 from ..layout import jittered_bbox
 from ..models import RegionTruth, WatermarkSpec
 from ..templates import render_template
+from ._textband import watermark_text_band
 
 
 def draw_watermark(page: fitz.Page, spec: WatermarkSpec, *, page_no: int, page_offset: int) -> RegionTruth | None:
@@ -50,4 +51,11 @@ def draw_watermark(page: fitz.Page, spec: WatermarkSpec, *, page_no: int, page_o
         page.draw_rect(rect, color=(0.8, 0.8, 0.8), width=0.2, stroke_opacity=0.15)
     else:
         page.insert_textbox(rect, text, fontsize=28, fontname="helv", align=1, color=color, fill_opacity=opacity)
+    if spec.band_from_text and not spec.image_like and abs(rotation) <= 0.01:
+        # D16.5: extractable (rot0, non-image) watermark -> record the PDF-derivable
+        # rendered-text band (matches the detector) instead of the authored box.
+        # Rotated/morph/image-like watermarks keep their authored band (limitation).
+        band = watermark_text_band(page, rect, page.rect.width, page.rect.height)
+        if band is not None:
+            bbox = band
     return RegionTruth(kind="watermark", bbox=bbox, text=text, variable_text=spec.variable_text, rotation_deg=round(rotation, 2))

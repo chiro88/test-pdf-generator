@@ -5,6 +5,7 @@ import fitz
 from ..layout import jittered_bbox, mirrored_x_bbox
 from ..models import HeaderFooterSpec, RegionTruth
 from ..templates import render_template
+from ._textband import footer_fragment_band
 
 
 def draw_header_or_footer(page: fitz.Page, spec: HeaderFooterSpec, *, kind: str, page_no: int, page_offset: int, page_width: float, page_count: int = 1) -> RegionTruth | None:
@@ -35,4 +36,10 @@ def draw_header_or_footer(page: fitz.Page, spec: HeaderFooterSpec, *, kind: str,
         if spec.rule_jitter_y:
             ry += ((page_no * 3) % (2 * spec.rule_jitter_y + 1)) - spec.rule_jitter_y
         page.draw_line((bbox.x0, ry), (bbox.x1, ry), color=(0.25, 0.25, 0.25), width=0.5)
+    if spec.band_from_text:
+        # D16.5: record the PDF-derivable rendered-text band (matches the detector)
+        # instead of the authored editorial bbox.
+        band = footer_fragment_band(page, rect, page_width)
+        if band is not None:
+            bbox = band
     return RegionTruth(kind=kind, bbox=bbox, text=text, variable_text=spec.variable_text)

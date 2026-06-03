@@ -528,10 +528,10 @@ def expanded_cases() -> List[CaseSpec]:
         case_id="exp_hf_multipart_footer_center_notice",
         axes={"footer": "multipart_left_center_right", "pages": 2},
         page=PageSpec(page_count=2),
-        footer=HeaderFooterSpec(True, band(48, 740, 220, 774), HEADER_TEMPLATES["doc_title"], False, False, False),
+        footer=HeaderFooterSpec(True, band(48, 740, 220, 774), HEADER_TEMPLATES["doc_title"], False, False, False, band_from_text=True),
         extra_regions=(
-            HeaderFooterSpec(True, band(225, 740, 470, 774), FOOTER_TEMPLATES["distribution_notice"], False, False, False, kind="footer"),
-            HeaderFooterSpec(True, band(500, 740, 564, 774), FOOTER_TEMPLATES["page_only"], True, False, False, kind="footer"),
+            HeaderFooterSpec(True, band(225, 740, 470, 774), FOOTER_TEMPLATES["distribution_notice"], False, False, False, kind="footer", band_from_text=True),
+            HeaderFooterSpec(True, band(500, 740, 564, 774), FOOTER_TEMPLATES["page_only"], True, False, False, kind="footer", band_from_text=True),
         ),
         notes="Multi-part footer: left document title, center distribution notice, right page number.",
         coverage_hints=("hf.page_number_position:bottom_right",),
@@ -562,7 +562,7 @@ def expanded_cases() -> List[CaseSpec]:
         case_id="exp_wm_license_text_position_jitter",
         axes={"watermark": "variable_license_position_jitter", "pages": 3},
         page=PageSpec(page_count=3),
-        watermark=WatermarkSpec(True, band(120, 310, 500, 510), WATERMARK_TEMPLATES["licensed"], True, 0, 0.13, "center", jitter_pos=4),
+        watermark=WatermarkSpec(True, band(120, 310, 500, 510), WATERMARK_TEMPLATES["licensed"], True, 0, 0.13, "center", jitter_pos=4, band_from_text=True),
         notes="Variable per-page license watermark with deterministic position jitter.",
     ))
     cases.append(CaseSpec(

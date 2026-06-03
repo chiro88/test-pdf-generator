@@ -69,6 +69,9 @@ class HeaderFooterSpec:
     jitter_y: int = 0
     rule_jitter_y: int = 0
     first_page_suppressed: bool = False
+    # D16.5: record the PDF-derivable rendered-text band as truth (so a truth-blind
+    # detector can match it) instead of the authored spec bbox.
+    band_from_text: bool = False
 
 
 @dataclass(frozen=True)
@@ -86,6 +89,9 @@ class WatermarkSpec:
     jitter_rot: float = 0.0
     jitter_opacity: float = 0.0
     near_footer: bool = False
+    # D16.5: record the PDF-derivable rendered-text band as truth (extractable
+    # rot0 watermarks only; rotated/morph/image-like keep the authored band).
+    band_from_text: bool = False
 
 
 @dataclass(frozen=True)

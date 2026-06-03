@@ -1,0 +1,5 @@
+# picker_cmc v0 runtime + dev dependencies.
+# The web editor server itself uses only the Python standard library.
+PyMuPDF>=1.24        # PDF extraction + page rendering (imported as `fitz`)
+PyYAML>=6.0          # setup-yaml-v0 parsing
+pytest>=7.0          # tests only (not needed at runtime)

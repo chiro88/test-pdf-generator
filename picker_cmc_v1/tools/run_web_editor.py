@@ -48,13 +48,15 @@ def main(argv=None) -> int:
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--run-dir", help="existing run directory")
     src.add_argument("--setup", help="setup YAML (creates the run, then serves)")
+    ap.add_argument("--manifest", default=None,
+                    help="explicit editor-save-manifest-v0 to open (must be inside the run dir)")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args(argv)
 
     try:
         run_dir = _run_dir_from_setup(args.setup) if args.setup else args.run_dir
-        ctx = load_run(run_dir)
+        ctx = load_run(run_dir, manifest_path=args.manifest)
     except (SetupError, WebEditorError) as exc:
         print(f"ERROR {exc}", file=sys.stderr)
         return 2

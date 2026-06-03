@@ -96,7 +96,31 @@ Switch to **Ruler** mode: first click = start, second click = end. The readout
 shows start/end (PDF pt), `dx`, `dy`, and straight-line distance. Ruler data is
 **never persisted** to the manifest.
 
+## Persistence + export (D25)
+
+The saved manifest is reopenable, and post-edit artifacts are generated from it.
+
+```bash
+# reopen a specific saved (e.g. Save-As) manifest — must be inside the run dir
+python tools/run_web_editor.py --run-dir artifacts/picker_run \
+    --manifest artifacts/picker_run/versions/edited.json
+
+# export overlays/crops from the EDITED manifest (source of truth, not detector)
+python tools/export_editor_manifest_artifacts.py \
+    --manifest artifacts/picker_run/versions/edited.json \
+    --out artifacts/picker_run/edited_review --json
+```
+
+- `--manifest` loads an explicit `editor-save-manifest-v0`; it must validate and live
+  **inside the run directory** (`MANIFEST_OUTSIDE_RUN_DIR` otherwise). The object tree
+  then shows the saved/edited state, not the detector original.
+- Export (`edited-review-v0`) renders `pages/page_NNN_overlay.png` and
+  `crops/<figure|table>_<index>_body_region.png` from the manifest's **edited**
+  bboxes, plus `index.md` + `summary.json` (carrying `edit_count`). It never re-runs
+  the detector.
+
 ## Not yet (later milestones)
 
 - multi-user / sessions, job queue, database
+- undo / redo
 - advanced setup UI

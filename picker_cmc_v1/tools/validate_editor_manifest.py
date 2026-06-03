@@ -17,8 +17,8 @@ from editor_manifest.validator import validate_manifest  # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Validate an editor-save-manifest-v0 (D22).")
-    ap.add_argument("--manifest", required=True)
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--manifest", required=True, help="editor-save-manifest-v0 JSON to validate")
+    ap.add_argument("--json", action="store_true", help="emit the validation result as pure JSON")
     args = ap.parse_args(argv)
 
     try:

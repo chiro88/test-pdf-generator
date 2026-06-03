@@ -23,9 +23,9 @@ from web_editor.export import ExportError, export_artifacts  # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Export post-edit artifacts from an editor-save-manifest (D25).")
-    ap.add_argument("--manifest", required=True)
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--manifest", required=True, help="editor-save-manifest-v0 (the edited manifest)")
+    ap.add_argument("--out", required=True, help="output dir for overlays/crops + index/summary")
+    ap.add_argument("--json", action="store_true", help="emit the export summary as pure JSON")
     args = ap.parse_args(argv)
 
     try:

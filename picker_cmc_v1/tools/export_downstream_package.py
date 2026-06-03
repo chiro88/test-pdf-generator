@@ -23,9 +23,9 @@ from downstream_package.exporter import ExportError, build_package  # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Export a downstream-package-v0 (D27).")
-    ap.add_argument("--manifest", required=True)
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--manifest", required=True, help="editor-save-manifest-v0 (source of truth = edited)")
+    ap.add_argument("--out", required=True, help="output dir for the downstream package")
+    ap.add_argument("--json", action="store_true", help="emit the package summary as pure JSON")
     args = ap.parse_args(argv)
 
     try:

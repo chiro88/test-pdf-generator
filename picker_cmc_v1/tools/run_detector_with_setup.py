@@ -26,8 +26,8 @@ from setup.validator import validate_setup  # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Run the detector from a setup YAML (D22).")
-    ap.add_argument("--setup", required=True)
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--setup", required=True, help="setup-yaml-v0 file (input PDF + output paths)")
+    ap.add_argument("--json", action="store_true", help="emit the run summary as pure JSON")
     args = ap.parse_args(argv)
 
     try:

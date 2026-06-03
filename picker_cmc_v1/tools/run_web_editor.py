@@ -50,8 +50,8 @@ def main(argv=None) -> int:
     src.add_argument("--setup", help="setup YAML (creates the run, then serves)")
     ap.add_argument("--manifest", default=None,
                     help="explicit editor-save-manifest-v0 to open (must be inside the run dir)")
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--host", default="127.0.0.1", help="bind host (default: 127.0.0.1)")
+    ap.add_argument("--port", type=int, default=8765, help="bind port (default: 8765)")
     args = ap.parse_args(argv)
 
     try:

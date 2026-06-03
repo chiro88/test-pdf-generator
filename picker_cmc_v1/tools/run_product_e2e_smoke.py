@@ -116,9 +116,9 @@ def run_e2e(pdf: str | Path, workdir: str | Path) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Product end-to-end smoke (D28).")
-    ap.add_argument("--pdf", required=True)
-    ap.add_argument("--workdir", required=True)
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--pdf", required=True, help="input PDF to drive the end-to-end flow")
+    ap.add_argument("--workdir", required=True, help="scratch dir for the run + exported artifacts")
+    ap.add_argument("--json", action="store_true", help="emit the per-stage summary as pure JSON")
     args = ap.parse_args(argv)
     try:
         summary = run_e2e(args.pdf, args.workdir)

@@ -114,13 +114,18 @@ def build_detected_manifest(rtm_root: Path, frozen_cases: list, *, detector_cmd:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Run a detector over RTM frozen fixtures (integration path).")
-    ap.add_argument("--rtm-root", default=str(ROOT / "picker_cmc_v1/tests/fixtures/rtm_frozen"))
-    ap.add_argument("--out", default="artifacts/detector_rtm")
-    ap.add_argument("--detector-cmd", default=None)
+    ap.add_argument("--rtm-root", default=str(ROOT / "picker_cmc_v1/tests/fixtures/rtm_frozen"),
+                    help="frozen RTM fixtures root (default: the committed rtm_frozen set)")
+    ap.add_argument("--out", default="artifacts/detector_rtm",
+                    help="output dir for the detected manifest + compare report")
+    ap.add_argument("--detector-cmd", default=None,
+                    help="detector command with {pdf}/{out} placeholders, e.g. "
+                         "\"python tools/detect_pdf.py --pdf {pdf} --out {out}\"")
     ap.add_argument("--synthetic-from-truth", action="store_true",
                     help="CONTRACT TEST ONLY: copy truth as detector output (no correctness claim)")
-    ap.add_argument("--tolerance-profile", default="strict", choices=["strict", "loose"])
-    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--tolerance-profile", default="strict", choices=["strict", "loose"],
+                    help="compare tolerance profile (default: strict)")
+    ap.add_argument("--json", action="store_true", help="emit the summary as pure JSON")
     args = ap.parse_args(argv)
 
     def emit(payload, code):

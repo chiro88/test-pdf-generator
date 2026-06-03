@@ -20,8 +20,8 @@ from detector.pipeline import detect_pdf  # noqa: E402
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="No-truth detector on one PDF -> detector-output-v0 pages.")
-    ap.add_argument("--pdf", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--pdf", required=True, help="input PDF to run the no-truth detector on")
+    ap.add_argument("--out", required=True, help="output path for the detector-output-v0 pages JSON")
     ap.add_argument("--setup", default=None, help="optional detector config (unused in baseline)")
     args = ap.parse_args(argv)
 

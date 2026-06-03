@@ -15,7 +15,8 @@ artifacts/
 pdf/
 *.input.pdf
 
-# Generated handoff bundles
+# Generated handoff bundles (regenerable; never committed)
+docs/cc_handoff/*.tar.gz
 docs/cc_handoff/D2_handoff.tar.gz
 docs/cc_handoff/D3_handoff.tar.gz
 docs/cc_handoff/D3_5_handoff.tar.gz

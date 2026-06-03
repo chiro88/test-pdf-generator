@@ -64,14 +64,23 @@ def detect_pdf(pdf_path: str | Path) -> Dict[str, Any]:
                             "title_position": tpos, "gap_lines": glines})
             if anchor.kind == "table":
                 table_anchors.append((ex.page, anchor))
-        # Sequence-aware context: clamp each context between neighbour bodies.
-        order = sorted(range(len(records)), key=lambda k: records[k]["body"][1])
-        for pos, k in enumerate(order):
-            rec = records[k]
-            y_lo = (records[order[pos - 1]]["body"][3] if pos > 0 else z0)
-            y_hi = (records[order[pos + 1]]["body"][1] if pos < len(order) - 1 else z1)
-            rec["context"] = context_region(rec["caption"], rec["body"], ex.width, ex.height,
-                                             y_lo=min(y_lo, rec["body"][1]), y_hi=max(y_hi, rec["body"][3]))
+        # Sequence-aware context: clamp each context between SAME-COLUMN neighbour
+        # bodies only (a same-y neighbour in the other column must not clamp it).
+        for k, rec in enumerate(records):
+            body, cap = rec["body"], rec["caption"]
+            y_lo, y_hi = z0, z1
+            for j, other in enumerate(records):
+                if j == k:
+                    continue
+                ob = other["body"]
+                if ob[2] <= body[0] or ob[0] >= body[2]:   # different column -> no clamp
+                    continue
+                if ob[3] <= body[1]:
+                    y_lo = max(y_lo, ob[3])
+                elif ob[1] >= body[3]:
+                    y_hi = min(y_hi, ob[1])
+            rec["context"] = context_region(cap, body, ex.width, ex.height,
+                                             y_lo=min(y_lo, cap[1], body[1]), y_hi=max(y_hi, cap[3], body[3]))
         per_page.append({"page": ex.page, "records": records})
 
     # Cross-page table identity + continuation linking.

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>picker_cmc — web editor (read-only)</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header id="toolbar">
+    <span class="brand">picker_cmc viewer <em>read-only (D23)</em></span>
+    <span class="toggles">
+      <label><input type="checkbox" data-kind="figure" checked> Figures</label>
+      <label><input type="checkbox" data-kind="table" checked> Tables</label>
+      <label><input type="checkbox" data-kind="header" checked> Header</label>
+      <label><input type="checkbox" data-kind="footer" checked> Footer</label>
+      <label><input type="checkbox" data-kind="watermark" checked> Watermark</label>
+      <button id="toggle-all" type="button">Toggle all</button>
+    </span>
+    <span class="disabled-tools">
+      <button type="button" disabled title="Coming in D24">Edit bbox (D24)</button>
+      <button type="button" disabled title="Coming in D24">Ruler (D24)</button>
+      <button type="button" disabled title="Coming in D24">Save (D24)</button>
+    </span>
+  </header>
+
+  <main>
+    <aside id="tree">
+      <div id="run-meta" class="meta"></div>
+      <section><h3>Figures</h3><ul id="tree-figures"></ul></section>
+      <section><h3>Tables</h3><ul id="tree-tables"></ul></section>
+      <section><h3>Common regions</h3><ul id="tree-common"></ul></section>
+    </aside>
+
+    <div id="viewer">
+      <div id="page-nav">
+        <button id="prev" type="button">◀</button>
+        <span id="page-label">page —</span>
+        <button id="next" type="button">▶</button>
+      </div>
+      <div id="page-stage">
+        <img id="page-img" alt="page">
+        <div id="overlays"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

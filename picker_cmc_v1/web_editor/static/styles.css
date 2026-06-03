@@ -1,0 +1,40 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 13px/1.4 system-ui, sans-serif; color: #1d2330; background: #f4f6fa; }
+
+#toolbar {
+  display: flex; align-items: center; gap: 18px; padding: 8px 14px;
+  background: #1d2330; color: #fff; position: sticky; top: 0; z-index: 10;
+}
+#toolbar .brand { font-weight: 600; }
+#toolbar .brand em { color: #9fb4d8; font-style: normal; font-size: 11px; margin-left: 6px; }
+#toolbar .toggles label { margin-right: 10px; cursor: pointer; }
+#toolbar .disabled-tools { margin-left: auto; }
+#toolbar button { font: inherit; padding: 3px 8px; border-radius: 4px; border: 1px solid #44506a;
+  background: #2b3550; color: #fff; cursor: pointer; }
+#toolbar button[disabled] { opacity: .45; cursor: not-allowed; }
+
+main { display: flex; height: calc(100vh - 41px); }
+#tree { width: 300px; overflow: auto; padding: 10px 12px; background: #fff; border-right: 1px solid #dfe4ee; }
+#tree .meta { font-size: 11px; color: #667; white-space: pre-wrap; margin-bottom: 10px; }
+#tree h3 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; color: #51607a; }
+#tree ul { list-style: none; margin: 0; padding: 0; }
+#tree li { padding: 3px 6px; border-radius: 4px; cursor: pointer; }
+#tree li:hover { background: #eef2fb; }
+#tree li.selected { background: #d7e6ff; font-weight: 600; }
+#tree li .pg { color: #8a93a6; font-size: 11px; }
+
+#viewer { flex: 1; overflow: auto; padding: 12px; }
+#page-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+#page-nav button { font: inherit; padding: 2px 10px; cursor: pointer; }
+#page-stage { position: relative; display: inline-block; box-shadow: 0 1px 6px rgba(0,0,0,.18); background: #fff; }
+#page-img { display: block; max-width: none; }
+#overlays { position: absolute; inset: 0; pointer-events: none; }
+
+.ov { position: absolute; border: 2px solid; pointer-events: auto; }
+.ov.figure { border-color: #1144dd; }
+.ov.table  { border-color: #128a2c; }
+.ov.header, .ov.footer { border-color: #777; }
+.ov.watermark { border-color: #d98800; }
+.ov.selected { border-width: 3px; box-shadow: 0 0 0 2px rgba(255,80,80,.55); }
+.ov .lbl { position: absolute; top: -15px; left: -2px; font-size: 10px; padding: 0 3px;
+  background: rgba(255,255,255,.85); white-space: nowrap; }

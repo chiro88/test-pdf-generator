@@ -1,0 +1,70 @@
+# Web editor v0 — read-only foundation (D23)
+
+A local, dependency-light viewer for a detector run: it renders pages, shows the
+figure/table/common-region tree, draws bbox overlays, and lets you navigate by
+clicking an object. **Read-only** — no bbox editing, no save, no ruler (those are
+D24). Built on the Python stdlib `http.server` (no new dependencies).
+
+## Launch
+
+```bash
+# from picker_cmc_v1/
+
+# (a) serve an existing run directory (D22 output)
+python tools/run_web_editor.py --run-dir artifacts/picker_run --host 127.0.0.1 --port 8765
+
+# (b) from a setup YAML — creates the run, then serves
+python tools/run_web_editor.py --setup setup.yaml --host 127.0.0.1 --port 8765
+```
+
+`--setup` mode reuses the D22 flow: it writes `detected_manifest.json` and
+`editor_save_manifest.json` under the setup's `output.artifact_dir`, then serves.
+
+The run is loaded into a `RunContext`; an `editor-save-manifest-v0` is **validated
+before the server starts** (an invalid manifest is a structured load error).
+
+## API
+
+| endpoint | returns |
+|---|---|
+| `GET /` | static `index.html` |
+| `GET /static/app.js`, `/static/styles.css` | static assets |
+| `GET /api/health` | `{ok, status}` |
+| `GET /api/run` | `web-editor-run-v0` (source_pdf, manifest, page_count, coords) |
+| `GET /api/manifest` | the editor-save-manifest-v0 |
+| `GET /api/pages` | `{pages: [1, 2, …]}` |
+| `GET /api/page/{page}/png?scale=1.5` | rendered page PNG |
+| `GET /api/page/{page}/objects` | `{page, figures[], tables[], common_regions[]}` (each with `object_id`) |
+| `GET /api/page/{page}/overlays` | `{page, overlays:[{object_id, kind, region, bbox}]}` |
+| `GET /api/object/{object_id}` | `{object_id, page, kind, object}` |
+
+`/api/run` shape:
+
+```json
+{ "ok": true, "schema_version": "web-editor-run-v0", "source_pdf": "...",
+  "manifest": "...", "page_count": 6, "coordinate_unit": "pdf_pt",
+  "coordinate_origin": "top-left" }
+```
+
+`object_id` is `"<figure|table>:<index>:page<N>"`; common regions use
+`"common:<id>:page<N>"`.
+
+## Viewer
+
+- **Left pane**: Figures / Tables / Common-regions trees (page-tagged); click an
+  object to select it.
+- **Right pane**: rendered page image with bbox overlays; the selected box is
+  highlighted; page prev/next.
+- **Top toolbar**: toggle Figures / Tables / Header / Footer / Watermark / all.
+  Edit-bbox / Ruler / Save buttons are present but **disabled with a "D24" note**.
+
+## Coordinate handling
+
+Bboxes are PDF points, top-left origin. The page is rendered at a fixed `scale`
+(1.5); overlays are positioned at `bbox * scale`. No axis flip.
+
+## Not in D23 (deferred to D24)
+
+- bbox drag / resize editing
+- saving edits back to `editor-save-manifest-v0`
+- ruler / measurement tool

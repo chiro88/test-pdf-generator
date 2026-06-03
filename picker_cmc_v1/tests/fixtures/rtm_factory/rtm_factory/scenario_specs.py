@@ -685,6 +685,46 @@ def d9_sequence_cases() -> List[CaseSpec]:
                                footer=HeaderFooterSpec(True, band(48, 740, 564, 774), FOOTER_TEMPLATES["confidential_page"], True, rule_line=True, rule_jitter_y=2),
                                notes="Table-text-figure sequence with jittered header and footer."))
 
+    # --- header + footer + watermark common base over sequence layouts -------
+    # Each case carries the full common-region trio (running header, ruled footer,
+    # centered diagonal watermark) under a figure/table/text sequence.
+    def _hfwm():
+        return dict(
+            header=HeaderFooterSpec(True, band(48, 18, 564, 54), HEADER_TEMPLATES["subtitle_page"], True, rule_line=True),
+            footer=HeaderFooterSpec(True, band(48, 740, 564, 774), FOOTER_TEMPLATES["confidential_page"], True, rule_line=True),
+            watermark=WatermarkSpec(True, band(150, 300, 460, 470), WATERMARK_TEMPLATES["confidential"], False, 45, 0.12, "center"),
+        )
+
+    sb = SequenceBuilder()
+    sb.figure("20-1", "System overview", body_kind="diagram", body_h=130).figure("20-2", "Signal timing", body_kind="waveform", body_h=130)
+    cases.append(sb.build_case("exp_hfwm_fig_fig", {"sequence": "figure_figure", "hf": "header_footer_watermark"},
+                               **_hfwm(), notes="Figure-figure over a header+footer+watermark common base."))
+
+    sb = SequenceBuilder()
+    sb.figure("21-1", "Read path", body_kind="waveform", body_h=125).text(1).figure("21-2", "Write path", body_kind="waveform", body_h=125)
+    cases.append(sb.build_case("exp_hfwm_fig_t1_fig", {"sequence": "figure_text1_figure", "hf": "header_footer_watermark"},
+                               **_hfwm(), notes="Figure, one-line text, figure over a header+footer+watermark base."))
+
+    sb = SequenceBuilder()
+    sb.figure("22-1", "Block diagram", body_kind="diagram", caption_pos="above", body_h=130).figure("22-2", "Raster map", body_kind="raster", body_h=130)
+    cases.append(sb.build_case("exp_hfwm_fig_fig_alt", {"sequence": "figure_figure", "hf": "header_footer_watermark", "variant": "alt"},
+                               **_hfwm(), notes="Figure-figure (alt body kinds, caption-above first) over a header+footer+watermark base."))
+
+    sb = SequenceBuilder()
+    sb.figure("23-1", "Topology", body_kind="diagram", body_h=130).table("23-1", "Topology categories", "tbl_hfwm_23_1", body_h=150)
+    cases.append(sb.build_case("exp_hfwm_fig_table", {"sequence": "figure_table", "hf": "header_footer_watermark"},
+                               **_hfwm(), notes="Figure-table over a header+footer+watermark common base."))
+
+    sb = SequenceBuilder()
+    sb.table("24-1", "Bandwidth table", "tbl_hfwm_24_1", body_h=150).figure("24-1", "Bandwidth chart", body_kind="waveform", body_h=130)
+    cases.append(sb.build_case("exp_hfwm_table_fig", {"sequence": "table_figure", "hf": "header_footer_watermark"},
+                               **_hfwm(), notes="Table-figure over a header+footer+watermark common base."))
+
+    sb = SequenceBuilder()
+    sb.table("25-1", "Encoding table", "tbl_hfwm_25_1", body_h=150).text(1).figure("25-1", "Encoding waveform", body_kind="waveform", body_h=125)
+    cases.append(sb.build_case("exp_hfwm_table_t1_fig", {"sequence": "table_text1_figure", "hf": "header_footer_watermark"},
+                               **_hfwm(), notes="Table, one-line text, figure over a header+footer+watermark base."))
+
     return cases
 
 

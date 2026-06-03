@@ -28,6 +28,11 @@ def validate_package(data: Any) -> List[str]:
     for f in ("source_pdf", "source_editor_manifest"):
         if not isinstance(data.get(f), str) or not data.get(f):
             errors.append(f"{f} must be a non-empty string")
+    # D27.1 provenance: the package must trace to an editor-save-manifest (the
+    # human-edited final state), NOT a detector-output proposal.
+    sem = data.get("source_editor_manifest")
+    if isinstance(sem, str) and sem and sem.rsplit("/", 1)[-1] == "detected_manifest.json":
+        errors.append("source_editor_manifest must be an editor-save-manifest, not detected_manifest.json")
     objs = data.get("objects")
     if not isinstance(objs, list):
         errors.append("objects must be a list")

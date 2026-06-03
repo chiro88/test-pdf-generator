@@ -24,8 +24,22 @@ def _object_id(kind: str, index: str, page: int) -> str:
     return f"{kind}:{index}:page{page}"
 
 
-def build_package(manifest: Dict[str, Any], out_dir: str | Path, *, crop_scale: float = 3.0) -> Dict[str, Any]:
-    """Export figures/tables from a saved manifest into a downstream package."""
+_EDITOR_SCHEMA = "editor-save-manifest-v0"
+
+
+def build_package(manifest: Dict[str, Any], out_dir: str | Path, *,
+                  source_manifest_path: str | Path, crop_scale: float = 3.0) -> Dict[str, Any]:
+    """Export figures/tables from a saved EDITED manifest into a downstream package.
+
+    ``source_manifest_path`` is the editor-save-manifest-v0 that is the source of
+    truth; it is recorded as ``source_editor_manifest`` (NOT the detector output).
+    """
+    # D27.1: the input MUST be an editor-save-manifest (the human-edited final state),
+    # never a detector-output proposal.
+    if manifest.get("schema_version") != _EDITOR_SCHEMA:
+        raise ExportError(f"input must be {_EDITOR_SCHEMA} (got {manifest.get('schema_version')!r})")
+    if source_manifest_path is None:
+        raise ExportError("source_manifest_path (the editor-save-manifest) is required")
     out_dir = Path(out_dir)
     pdf = manifest.get("source_pdf", "")
     if not pdf or not Path(pdf).exists():
@@ -59,7 +73,7 @@ def build_package(manifest: Dict[str, Any], out_dir: str | Path, *, crop_scale: 
     package = {
         "schema_version": schema.SCHEMA_VERSION,
         "source_pdf": pdf,
-        "source_editor_manifest": manifest.get("source_detector_manifest", ""),
+        "source_editor_manifest": str(source_manifest_path),
         "coordinate_unit": schema.COORDINATE_UNIT,
         "coordinate_origin": schema.COORDINATE_ORIGIN,
         "objects": objects,
@@ -71,6 +85,7 @@ def build_package(manifest: Dict[str, Any], out_dir: str | Path, *, crop_scale: 
             f.write(json.dumps(o, ensure_ascii=False) + "\n")
     _write_index(out_dir, package)
     return {"ok": True, "schema_version": schema.SCHEMA_VERSION, "objects": len(objects),
+            "source_editor_manifest": str(source_manifest_path),
             "figures": sum(1 for o in objects if o["kind"] == "figure"),
             "tables": sum(1 for o in objects if o["kind"] == "table"),
             "crops": sum(len(o["crops"]) for o in objects),
@@ -80,8 +95,10 @@ def build_package(manifest: Dict[str, Any], out_dir: str | Path, *, crop_scale: 
 
 def _write_index(out_dir: Path, package: Dict[str, Any]) -> None:
     lines = [f"# Downstream object package — `{Path(package['source_pdf']).name}`", ""]
-    lines.append("> `downstream-package-v0` from the edited editor-save-manifest. "
-                 "Geometry + crops only; no content interpretation.")
+    lines.append("> `downstream-package-v0` from the edited **editor-save-manifest-v0** "
+                 "(human-corrected final state). Geometry + crops only; no content interpretation.")
+    lines.append(f">")
+    lines.append(f"> source editor manifest: `{package['source_editor_manifest']}`")
     lines.append("")
     lines.append("| object_id | kind | page | title | hint | crops |")
     lines.append("|---|---|---|---|---|---|")

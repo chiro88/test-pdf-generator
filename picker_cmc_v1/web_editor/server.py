@@ -186,7 +186,8 @@ def make_handler(ws: Workspace):
                     from downstream_package.exporter import ExportError, build_package
                     out = ctx.run_dir / "downstream_package"
                     try:
-                        return self._send(200, build_package(ctx.manifest, out))
+                        return self._send(200, build_package(ctx.manifest, out,
+                                                             source_manifest_path=str(ctx.manifest_path)))
                     except ExportError as exc:
                         return self._send(400, {"ok": False, "error_code": "EXPORT_FAILED", "error": str(exc)})
                 return self._send(404, {"ok": False, "error": "not found"})

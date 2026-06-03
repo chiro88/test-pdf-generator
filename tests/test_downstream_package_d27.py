@@ -53,7 +53,7 @@ def _run(tmp: Path):
 # (1)(2)(3) package + validator + jsonl
 def test_build_package(tmp_path):
     ctx, _ = _run(tmp_path)
-    summary = build_package(ctx.manifest, tmp_path / "pkg")
+    summary = build_package(ctx.manifest, tmp_path / "pkg", source_manifest_path=str(tmp_path / "editor_save_manifest.json"))
     assert summary["ok"] and summary["objects"] >= 2
     pkg = json.loads((tmp_path / "pkg" / "package_manifest.json").read_text())
     assert validate_package(pkg) == []
@@ -65,7 +65,7 @@ def test_build_package(tmp_path):
 # (4)(5) figure + table caption/body/context crops
 def test_crops_per_region(tmp_path):
     ctx, _ = _run(tmp_path)
-    build_package(ctx.manifest, tmp_path / "pkg")
+    build_package(ctx.manifest, tmp_path / "pkg", source_manifest_path=str(tmp_path / "editor_save_manifest.json"))
     pkg = json.loads((tmp_path / "pkg" / "package_manifest.json").read_text())
     fig = next(o for o in pkg["objects"] if o["kind"] == "figure")
     tbl = next(o for o in pkg["objects"] if o["kind"] == "table")
@@ -79,7 +79,7 @@ def test_crops_per_region(tmp_path):
 # (6) crop bbox uses the EDITED bbox
 def test_crop_uses_edited_bbox(tmp_path):
     ctx, _ = _run(tmp_path)
-    build_package(ctx.manifest, tmp_path / "pkg")
+    build_package(ctx.manifest, tmp_path / "pkg", source_manifest_path=str(tmp_path / "editor_save_manifest.json"))
     pkg = json.loads((tmp_path / "pkg" / "package_manifest.json").read_text())
     fig = next(o for o in pkg["objects"] if o["kind"] == "figure")
     assert fig["body_region"] == EDIT
@@ -90,7 +90,7 @@ def test_invalid_manifest_rejected(tmp_path):
     bad = {"schema_version": "editor-save-manifest-v0", "source_pdf": "/nope.pdf",
            "coordinate_unit": "pdf_pt", "coordinate_origin": "top-left", "pages": [], "edits": []}
     with pytest.raises(ExportError):
-        build_package(bad, tmp_path / "pkg")
+        build_package(bad, tmp_path / "pkg", source_manifest_path=str(tmp_path / "editor_save_manifest.json"))
 
 
 # (8) CLI --json is pure JSON

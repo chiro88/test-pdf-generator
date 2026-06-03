@@ -42,7 +42,7 @@ def main(argv=None) -> int:
         return 2
 
     try:
-        summary = build_package(manifest, args.out)
+        summary = build_package(manifest, args.out, source_manifest_path=args.manifest)
     except ExportError as exc:
         payload = {"ok": False, "error_code": "EXPORT_FAILED", "error": str(exc)}
         print(json.dumps(payload) if args.json else f"ERROR {exc}", file=(sys.stdout if args.json else sys.stderr))

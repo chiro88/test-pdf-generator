@@ -16,7 +16,7 @@ from detector_output import writer
 from .anchors import find_anchors
 from .common_regions import body_zone, detect_common_regions
 from .pdf_extract import extract_pdf
-from .region_inference import caption_band, context_region, frames, infer_region
+from .region_inference import body_orientation, caption_band, context_region, infer_body
 from .table_identity import assign_table_groups
 from .title_patterns import match_caption
 
@@ -44,13 +44,19 @@ def detect_pdf(pdf_path: str | Path) -> Dict[str, Any]:
     # Pass 1: per-page anchors + body inference + caption band.
     per_page: List[Dict[str, Any]] = []
     table_anchors = []  # (page, anchor) in reading order
-    for ex in pages_ex:
+    for pi, ex in enumerate(pages_ex):
         z0, z1 = body_zone(ex.height)
-        frame_list = frames(ex.drawings, (z0, z1))
-        used: set = set()
+        anchors = find_anchors(ex)
+        # D20: body side per kind (caption-below figures vs caption-above tables),
+        # so tightly-stacked figures segment correctly.
+        orient = {k: body_orientation([a.caption_bbox for a in anchors if a.kind == k], ex.drawings, ex.lines)
+                  for k in ("figure", "table")}
+        all_caps_sides = [(a.caption_bbox, orient[a.kind]) for a in anchors]
         records = []
-        for anchor in find_anchors(ex):
-            region = infer_region(anchor.caption_bbox, frame_list, used, ex.width, ex.height)
+        for anchor in anchors:
+            others = [a.caption_bbox for a in anchors if a is not anchor]
+            region = infer_body(anchor.caption_bbox, anchor.kind, orient[anchor.kind], all_caps_sides,
+                                ex.drawings, ex.lines, others, commons[pi], ex.width, ex.height)
             cap_lines = _multiline_caption(anchor.caption_bbox, ex.lines)
             if region is None:
                 cap = caption_band(cap_lines, None, ex.width, anchor.kind)

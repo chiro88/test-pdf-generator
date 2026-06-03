@@ -10,7 +10,7 @@ union(caption, body)+margin clamped to the page and to sequence neighbours.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from .models import InferredRegion
 
@@ -26,49 +26,237 @@ _CAP_BAND_PER_LINE = 18.0
 _CONTENT_MARGIN = 54.0
 _MIN_FRAME_AREA = 8000.0
 _MIN_FRAME_W = 100.0
-_MIN_FRAME_H = 24.0
+
+# D20 real-PDF body inference (unenclosed diagrams/waveforms + text-heavy tables).
+_ZONE_MARGIN = 30.0          # page top/bottom content margin for the body zone
+_DOMINANT_FRAME_FRAC = 0.62  # a frame enclosing >= this much zone-drawing area is THE body
+_LABEL_MAX_W = 180.0         # a "short label" (signal name / axis text) is narrower than this
+_LABEL_GAP = 16.0            # a label this close to the drawing core joins the body
+                             # (small enough not to walk across a two-column gutter)
+_ROW_GAP = 20.0             # text rows within this vertical gap are one contiguous table body
+_BODY_PAD = 2.0
+_MIN_TABLE_FRAME_H = 45.0    # a real grid frame is tall; a thin rule line is not
 
 
-def frames(drawings: List[List[float]], zone: tuple[float, float]) -> List[List[float]]:
-    """Dominant figure/table frame rects within the body zone (drops thin lines / tiny cells)."""
-    z0, z1 = zone
-    out = []
-    for r in drawings:
-        w, h = r[2] - r[0], r[3] - r[1]
-        if r[3] >= z0 - 4 and r[1] <= z1 + 4 and w >= _MIN_FRAME_W and h >= _MIN_FRAME_H and w * h >= _MIN_FRAME_AREA:
-            out.append([r[0], r[1], r[2], r[3]])
-    return out
+def _area(r) -> float:
+    return max(0.0, r[2] - r[0]) * max(0.0, r[3] - r[1])
 
 
-def _x_overlap(a, x0, x1) -> bool:
-    return not (a[2] <= x0 + 2 or a[0] >= x1 - 2)
+def _union(a, b) -> List[float]:
+    return [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]
 
 
-def infer_region(caption_text_bbox: List[float], frame_list: List[List[float]], used: Set[int],
-                 page_w: float, page_h: float) -> Optional[InferredRegion]:
-    cap_cy = (caption_text_bbox[1] + caption_text_bbox[3]) / 2
-    cx0, cx1 = caption_text_bbox[0], caption_text_bbox[2]
-    cands = [(i, f) for i, f in enumerate(frame_list) if i not in used and _x_overlap(f, cx0, cx1)]
-    if not cands:
-        cands = [(i, f) for i, f in enumerate(frame_list) if i not in used]
-    if not cands:
+def _inter_area(a, b) -> float:
+    ix = max(0.0, min(a[2], b[2]) - max(a[0], b[0]))
+    iy = max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
+    return ix * iy
+
+
+def _y_overlap(a, b, pad: float = 0.0) -> bool:
+    return not (a[3] <= b[1] - pad or a[1] >= b[3] + pad)
+
+
+def _caption_x_overlap(a, cap) -> bool:
+    return not (a[2] <= cap[0] - 2 or a[0] >= cap[2] + 2)
+
+
+def _nearest_gap_side(cap: List[float], drawings: List[List[float]]) -> Optional[str]:
+    """Side of the drawing nearest this caption (smallest vertical gap), or None."""
+    cap_top, cap_bot = cap[1], cap[3]
+    ga = min((cap_top - r[3] for r in drawings if r[3] <= cap_top + 2), default=None)
+    gb = min((r[1] - cap_bot for r in drawings if r[1] >= cap_bot - 2), default=None)
+    if ga is None and gb is None:
+        return None
+    if ga is None:
+        return "below"
+    if gb is None:
+        return "above"
+    return "above" if ga <= gb else "below"
+
+
+def body_orientation(caps: List[List[float]], drawings: List[List[float]], lines=None) -> str:
+    """Body side for a set of same-kind captions (caption-below figures vs
+    caption-above tables). Uses the TOPMOST caption's nearest-drawing side: the
+    first caption of a kind has no same-kind body above it to confuse the vote, so
+    it reads orientation cleanly even when later captions are tightly stacked. A
+    grid-less text table has no drawings, so it falls back to the nearest text row."""
+    ordered = sorted(caps, key=lambda c: c[1])
+    for c in ordered:
+        s = _nearest_gap_side(c, drawings)
+        if s:
+            return s
+    if lines:
+        for c in ordered:
+            text = [ln.bbox for ln in lines if _inter_area(ln.bbox, c) <= 0.3 * _area(ln.bbox)]
+            s = _nearest_gap_side(c, text)
+            if s:
+                return s
+    return "below"
+
+
+def _owns(d: List[float], cap: List[float], side: str,
+          all_caps_sides: List[tuple]) -> bool:
+    """A drawing belongs to the caption nearest it on that caption's body side, so
+    a figure does not grab a stacked neighbour's frame (each drawing has one owner)."""
+    my_gap = (cap[1] - d[3]) if side == "above" else (d[1] - cap[3])
+    if my_gap < -2:
+        return False                              # not on this caption's body side
+    for oc, os in all_caps_sides:
+        if oc is cap:
+            continue
+        og = (oc[1] - d[3]) if os == "above" else (d[1] - oc[3])
+        if og >= -2 and og < my_gap - 0.5:
+            return False                          # a nearer caption owns it
+    return True
+
+
+def _zone_y_bounds(cap: List[float], side: str, others: List[List[float]],
+                   commons: List[List[float]], page_h: float) -> tuple[float, float]:
+    """Vertical [lo, hi] the body may occupy, bounded by other captions / common
+    regions on the body side so a figure never eats its neighbour or the header/footer."""
+    if side == "above":
+        lo = _ZONE_MARGIN
+        for b in list(others) + list(commons):
+            if b[3] <= cap[1] + 2 and _caption_x_overlap(b, cap):
+                lo = max(lo, b[3])
+        return lo, cap[1]
+    hi = page_h - _ZONE_MARGIN
+    for b in list(others) + list(commons):
+        if b[1] >= cap[3] - 2 and _caption_x_overlap(b, cap):
+            hi = min(hi, b[1])
+    return cap[3], hi
+
+
+def _split_commons(commons: List[dict]) -> tuple[List[List[float]], set]:
+    """Header/footer bboxes (for spatial exclusion) and watermark texts (for text
+    exclusion). A diagonal watermark has a huge bbox that must NOT exclude the body
+    content beneath it, so watermarks are matched by text, not by their box."""
+    hf = [c["bbox"] for c in commons if c.get("kind") in ("header", "footer")]
+    wm = {(c.get("text") or "").strip() for c in commons if c.get("kind") == "watermark"}
+    return hf, wm
+
+
+def _excluded(line, cap, hf_bands, wm_texts) -> bool:
+    b = line.bbox
+    if _inter_area(b, cap) > 0.3 * _area(b):          # the caption itself
+        return True
+    if (line.text or "").strip() in wm_texts:         # watermark text (any position)
+        return True
+    return any(_inter_area(b, c) > 0.3 * _area(b) for c in hf_bands)  # header/footer band
+
+
+def _drawing_core(members: List[List[float]]) -> Optional[List[float]]:
+    """Body core from a drawing cluster: the dominant enclosing frame if one
+    contains most of the cluster's area (RTM frame / a real plot box, avoiding the
+    overshoot of internal strokes), else the union of the whole cluster."""
+    if not members:
+        return None
+    total = sum(_area(r) for r in members) or 1.0
+    best, best_contained = None, 0.0
+    for f in members:
+        if _area(f) < _MIN_FRAME_AREA:
+            continue
+        contained = sum(_area(d) for d in members if _inter_area(d, f) >= 0.6 * _area(d))
+        if contained > best_contained:
+            best, best_contained = f, contained
+    if best is not None and best_contained >= _DOMINANT_FRAME_FRAC * total:
+        return list(best)
+    core = list(members[0])
+    for d in members[1:]:
+        core = _union(core, d)
+    return core
+
+
+def _expand_with_labels(core, lines, cap, hf_bands, wm_texts, zone) -> List[float]:
+    """Grow the body to include short text labels (signal names/axis text) sharing
+    the core's y-band and adjacent to it — without swallowing paragraphs. Iterated
+    so a chain of labels (e.g. several left signal names) is pulled in transitively."""
+    lo, hi = zone
+    body = list(core)
+    cands = [ln for ln in lines if ln.bbox[1] >= lo - 2 and ln.bbox[3] <= hi + 2
+             and (ln.bbox[2] - ln.bbox[0]) <= _LABEL_MAX_W
+             and not _excluded(ln, cap, hf_bands, wm_texts)]
+    changed = True
+    while changed:
+        changed = False
+        for ln in cands:
+            b = ln.bbox
+            if not _y_overlap(b, body, pad=2.0):
+                continue
+            gap = max(body[0] - b[2], b[0] - body[2], 0.0)
+            if gap <= _LABEL_GAP and (b[0] < body[0] - 0.5 or b[2] > body[2] + 0.5
+                                      or b[1] < body[1] - 0.5 or b[3] > body[3] + 0.5):
+                body = _union(body, b)
+                changed = True
+    return body
+
+
+def _table_rows_core(lines, cap, side, hf_bands, wm_texts, zone) -> Optional[List[float]]:
+    """Body for a text-heavy table (weak/no grid): the contiguous block of row text
+    on the body side, stopping at a large vertical gap or a boundary."""
+    lo, hi = zone
+    rows = [ln.bbox for ln in lines
+            if ln.bbox[1] >= lo - 2 and ln.bbox[3] <= hi + 2
+            and not _excluded(ln, cap, hf_bands, wm_texts)]
+    if not rows:
+        return None
+    rows.sort(key=lambda b: b[1], reverse=(side == "above"))
+    core = list(rows[0])
+    edge = rows[0][1] if side == "above" else rows[0][3]
+    for b in rows[1:]:
+        gap = (b[1] - edge) if side == "below" else (edge - b[3])
+        if gap > _ROW_GAP:
+            break
+        core = _union(core, b)
+        edge = max(edge, b[3]) if side == "below" else min(edge, b[1])
+    return core
+
+
+def infer_body(cap: List[float], kind: str, side: str, all_caps_sides: List[tuple],
+               drawings: List[List[float]], lines, others: List[List[float]], commons: List[dict],
+               page_w: float, page_h: float) -> Optional[InferredRegion]:
+    """D20: body_region for real (possibly unenclosed) figures/tables.
+
+    ``side`` (from body_orientation) says whether the body is above or below the
+    caption. Bounds a zone by neighbouring captions/header-footer bands; keeps only
+    drawings on the body side that x-overlap the caption column (two-column safety)
+    AND are owned by this caption (nearest of all captions, so a stacked neighbour's
+    frame is not stolen); takes the dominant frame or the diagram union; augments
+    with adjacent short labels; and for a grid-less table uses the contiguous
+    row-text block. Never reads truth; nothing is case-specific.
+    """
+    hf_bands, wm_texts = _split_commons(commons)
+    zone = _zone_y_bounds(cap, side, others, hf_bands, page_h)
+    lo, hi = zone
+
+    on_side = (lambda r: r[3] <= cap[1] + 2) if side == "above" else (lambda r: r[1] >= cap[3] - 2)
+    zone_draw = [r for r in drawings if r[3] >= lo - 2 and r[1] <= hi + 2 and on_side(r)
+                 and _caption_x_overlap(r, cap) and _owns(r, cap, side, all_caps_sides)]
+
+    if kind == "table":
+        # A real grid frame (tall AND wide) is the body; a bare rule line (zero
+        # width/height) is not — without a real frame (thin-rule / text-only table)
+        # use the contiguous row-text block so the rows are captured.
+        grid = [r for r in zone_draw if (r[3] - r[1]) >= _MIN_TABLE_FRAME_H and (r[2] - r[0]) >= _MIN_FRAME_W]
+        core = _drawing_core(grid)
+        if core is None:
+            core = _table_rows_core(lines, cap, side, hf_bands, wm_texts, zone)
+    else:
+        core = _drawing_core(zone_draw)
+    if core is None:
         return None
 
-    def y_dist(f):
-        return min(abs(cap_cy - f[1]), abs(cap_cy - f[3]))
+    body = _expand_with_labels(core, lines, cap, hf_bands, wm_texts, zone)
+    # small padding, clamped to the zone + page
+    body = [max(0.0, body[0] - _BODY_PAD), max(lo, body[1] - _BODY_PAD),
+            min(page_w, body[2] + _BODY_PAD), min(hi, body[3] + _BODY_PAD)]
 
-    # nearest frame by y; tie-break toward larger area (the enclosing frame, not an inner block)
-    best = min(cands, key=lambda t: (round(y_dist(t[1]), 1), -((t[1][2] - t[1][0]) * (t[1][3] - t[1][1]))))
-    i, body = best[0], list(best[1])
-    used.add(i)
-
-    body_cy = (body[1] + body[3]) / 2
-    if body_cy < cap_cy:
+    if side == "above":
         title_position = "below"
-        gap = caption_text_bbox[1] - body[3]
+        gap = cap[1] - body[3]
     else:
         title_position = "above"
-        gap = body[1] - caption_text_bbox[3]
+        gap = body[1] - cap[3]
     gap_lines = int(round(max(0.0, gap) / _LINE))
     return InferredRegion(body=body, context=[], title_position=title_position, title_body_gap_lines=gap_lines)
 

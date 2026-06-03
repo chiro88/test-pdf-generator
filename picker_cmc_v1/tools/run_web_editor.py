@@ -22,7 +22,7 @@ from editor_manifest import writer as save_writer  # noqa: E402
 from setup.errors import SetupError  # noqa: E402
 from setup.loader import load_setup  # noqa: E402
 from setup.validator import validate_setup  # noqa: E402
-from web_editor.models import WebEditorError, load_run  # noqa: E402
+from web_editor.models import WebEditorError, Workspace, load_run  # noqa: E402
 from web_editor.server import serve  # noqa: E402
 
 
@@ -60,7 +60,11 @@ def main(argv=None) -> int:
     except (SetupError, WebEditorError) as exc:
         print(f"ERROR {exc}", file=sys.stderr)
         return 2
-    serve(ctx, args.host, args.port)
+    # D26: a workspace rooted at the run's parent so the setup panel can launch /
+    # list sibling runs; the opened run is the current one.
+    ws = Workspace(runs_root=ctx.run_dir.parent)
+    ws.register(ctx)
+    serve(ws, args.host, args.port)
     return 0
 
 

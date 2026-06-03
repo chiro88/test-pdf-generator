@@ -119,8 +119,40 @@ python tools/export_editor_manifest_artifacts.py \
   bboxes, plus `index.md` + `summary.json` (carrying `edit_count`). It never re-runs
   the detector.
 
+## Setup workflow + run launcher (D26)
+
+The server manages a **workspace** of runs (local single-user); the setup panel lets
+you create and open runs from the browser.
+
+| endpoint | purpose |
+|---|---|
+| `GET /api/setup/template` | the commented `setup-yaml-v0` template (text) |
+| `POST /api/setup/validate` | `{setup_yaml}` or `{setup_path}` → `{ok}` or a structured setup error |
+| `POST /api/setup/run` | validate + run the detector → `{ok, run_id, run_dir, page_count}` and opens it |
+| `GET /api/runs` | list runs in the workspace (`{run_id, run_dir, source_pdf, page_count}`) |
+| `GET /api/run/{run_id}` | open a run (sets it current) and return its summary |
+
+Before any run is open, viewer endpoints return `NO_RUN_OPEN` (409) — not a crash.
+`/api/health` reports `has_run`.
+
+### Setup panel (left pane)
+
+- **Download template** → loads the template into the editor.
+- **Validate** → shows `valid ✓` or the setup error (code + field).
+- **Run detector** → creates the run and opens it in the viewer.
+- **Runs** list → click to open an existing run.
+
+### Path / security policy (local tool)
+
+- `setup_path` / `input.pdf_path` are local paths the operator supplies.
+- The run is written to the setup's `output.artifact_dir`.
+- `/api/setup/template` returns generated YAML text only — it is **not** an arbitrary
+  file-read endpoint.
+- Save-As remains restricted to inside the run directory; explicit `--manifest` too.
+- No auth, sessions, DB, multi-user, or cloud upload.
+
 ## Not yet (later milestones)
 
-- multi-user / sessions, job queue, database
+- multi-user / sessions, job queue, database, auth
 - undo / redo
-- advanced setup UI
+- advanced setup UI (form-based)

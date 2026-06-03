@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from editor_manifest import writer as save_writer
 from editor_manifest.validator import validate_manifest as validate_editor
@@ -46,6 +46,57 @@ class RunContext:
     @property
     def page_count(self) -> int:
         return len(self.pages)
+
+
+@dataclass
+class Workspace:
+    """D26: a local single-user workspace of detector runs (one current run)."""
+    runs_root: Path
+    current: Optional[RunContext] = None
+    runs: Dict[str, Path] = field(default_factory=dict)   # run_id -> run_dir
+
+    def register(self, ctx: RunContext) -> str:
+        run_id = ctx.run_dir.name
+        self.runs[run_id] = ctx.run_dir
+        self.current = ctx
+        return run_id
+
+    def open(self, run_id: str) -> RunContext:
+        d = self.runs.get(run_id)
+        if d is None and self.runs_root and (self.runs_root / run_id).is_dir():
+            d = self.runs_root / run_id
+        if d is None or not Path(d).is_dir():
+            raise WebEditorError("RUN_NOT_FOUND", f"run not found: {run_id}")
+        ctx = load_run(d)
+        self.runs[run_id] = Path(d)
+        self.current = ctx
+        return ctx
+
+    def list_runs(self) -> List[Dict[str, Any]]:
+        found: Dict[str, Path] = dict(self.runs)
+        if self.runs_root and self.runs_root.is_dir():
+            for child in sorted(self.runs_root.iterdir()):
+                if child.is_dir() and ((child / "detected_manifest.json").exists()
+                                       or (child / "editor_save_manifest.json").exists()):
+                    found.setdefault(child.name, child)
+        out: List[Dict[str, Any]] = []
+        for run_id, d in sorted(found.items()):
+            info = {"run_id": run_id, "run_dir": str(d), "source_pdf": "", "page_count": 0}
+            mf = Path(d) / "editor_save_manifest.json"
+            if not mf.exists():
+                mf = Path(d) / "detected_manifest.json"
+            try:
+                m = json.loads(mf.read_text(encoding="utf-8"))
+                if "pages" in m:
+                    info["source_pdf"] = m.get("source_pdf", "")
+                    info["page_count"] = len(m.get("pages", []))
+                elif m.get("cases"):
+                    info["source_pdf"] = m["cases"][0].get("pdf", "")
+                    info["page_count"] = len(m["cases"][0].get("pages", []))
+            except Exception:
+                pass
+            out.append(info)
+        return out
 
 
 def load_run(run_dir: str | Path, manifest_path: str | Path | None = None) -> RunContext:

@@ -33,6 +33,19 @@
 
   <main>
     <aside id="tree">
+      <details id="setup-panel">
+        <summary>Setup / run launcher</summary>
+        <div class="setup-body">
+          <button id="dl-template" type="button">Download template</button>
+          <textarea id="setup-yaml" rows="6" placeholder="paste setup-yaml-v0 here (or load a template)"></textarea>
+          <div class="setup-actions">
+            <button id="setup-validate" type="button">Validate</button>
+            <button id="setup-run" type="button">Run detector</button>
+          </div>
+          <div id="setup-msg" class="setup-msg"></div>
+          <div class="runs"><b>Runs</b> <button id="runs-refresh" type="button">↻</button><ul id="runs-list"></ul></div>
+        </div>
+      </details>
       <div id="run-meta" class="meta"></div>
       <section><h3>Figures</h3><ul id="tree-figures"></ul></section>
       <section><h3>Tables</h3><ul id="tree-tables"></ul></section>

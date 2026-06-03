@@ -13,11 +13,48 @@ async function postJSON(u, body) {
 }
 
 async function boot() {
+  wireSetupPanel();
+  await refreshRuns();
+  const health = await getJSON("/api/health");
+  if (!health.has_run) { $("run-meta").textContent = "no run open — use the setup panel to create or open one"; wireToolbar(); return; }
+  await openCurrentRun();
+}
+
+async function openCurrentRun() {
   state.run = await getJSON("/api/run");
   if (!state.run.ok) { $("run-meta").textContent = "failed to load run"; return; }
   $("run-meta").textContent =
-    `pdf: ${state.run.source_pdf}\npages: ${state.run.page_count}\ncoords: ${state.run.coordinate_unit} / ${state.run.coordinate_origin}`;
+    `run: ${state.run.run_id}\npdf: ${state.run.source_pdf}\npages: ${state.run.page_count}\ncoords: ${state.run.coordinate_unit} / ${state.run.coordinate_origin}`;
   await buildTrees(); wireToolbar(); await refreshDirty(); showPage(1);
+}
+
+// ---- D26 setup panel / run launcher ----
+function setupMsg(text, ok) { const m = $("setup-msg"); m.textContent = text; m.className = "setup-msg " + (ok ? "ok" : "err"); }
+
+async function refreshRuns() {
+  const r = await getJSON("/api/runs"); const ul = $("runs-list"); ul.innerHTML = "";
+  (r.runs || []).forEach(run => {
+    const li = document.createElement("li");
+    li.textContent = `${run.run_id} (${run.page_count}p)`;
+    li.onclick = async () => { await getJSON(`/api/run/${encodeURIComponent(run.run_id)}`); await openCurrentRun(); };
+    ul.appendChild(li);
+  });
+}
+
+function wireSetupPanel() {
+  $("dl-template").onclick = async () => { $("setup-yaml").value = await (await fetch("/api/setup/template")).text(); setupMsg("template loaded — fill CHANGE_ME values", true); };
+  $("setup-validate").onclick = async () => {
+    const res = await postJSON("/api/setup/validate", { setup_yaml: $("setup-yaml").value });
+    res.ok ? setupMsg("setup is valid ✓", true) : setupMsg(`${res.error_code}: ${res.error}${res.field ? " (" + res.field + ")" : ""}`, false);
+  };
+  $("setup-run").onclick = async () => {
+    setupMsg("running detector…", true);
+    const res = await postJSON("/api/setup/run", { setup_yaml: $("setup-yaml").value });
+    if (!res.ok) { setupMsg(`${res.error_code}: ${res.error}${res.field ? " (" + res.field + ")" : ""}`, false); return; }
+    setupMsg(`run ${res.run_id} created (${res.page_count}p) — opening…`, true);
+    await refreshRuns(); await openCurrentRun(); $("setup-panel").open = false;
+  };
+  $("runs-refresh").onclick = refreshRuns;
 }
 
 async function buildTrees() {

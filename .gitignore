@@ -7,8 +7,13 @@ picker_cmc_v1/tests/fixtures/rtm_gallery/
 # committed without `git add -f`.
 picker_cmc_v1/tests/fixtures/rtm_frozen_demo/
 
-# Detector-vs-truth comparison artifacts (regenerable)
+# Detector-vs-truth comparison artifacts + real-PDF review packages (regenerable,
+# may contain renders of copyrighted user PDFs) — never committed.
 artifacts/
+
+# User-provided / sample real PDFs (D17 smoke inputs) — never commit the PDF itself.
+pdf/
+*.input.pdf
 
 # Generated handoff bundles
 docs/cc_handoff/D2_handoff.tar.gz
@@ -39,3 +44,5 @@ docs/cc_handoff/D13_handoff.tar.gz
 docs/cc_handoff/D14_handoff.tar.gz
 docs/cc_handoff/D15_handoff.tar.gz
 docs/cc_handoff/D16_handoff.tar.gz
+docs/cc_handoff/D16_5_handoff.tar.gz
+docs/cc_handoff/D17_handoff.tar.gz
